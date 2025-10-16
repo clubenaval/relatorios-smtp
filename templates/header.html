@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+       <style>
+        :root {
+            --primary-red: #C8102E; /* Vermelho principal do Clube Naval */
+            --secondary-red: #A50021;
+            --navy-blue: #1A3C5E; /* Azul naval escuro */
+            --dark-navy-blue: #0F2A45; /* Azul mais escuro para o modal */
+            --light-gray: #F5F5F5;
+            --dark-gray: #333333;
+            --white: #FFFFFF;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary-red), var(--secondary-red));
+            color: var(--white);
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            height: 60px; /* Ajuste conforme o tamanho do logo */
+            width: auto;
+            display: block; /* Garante exibição */
+        }
+        .elegant-text {
+            font-family: 'Great Vibes', cursive; /* Exemplo de fonte elegante */
+            font-size: 24px;
+            color: #FFFFFF; /* Cor azul marinha, ajustável */
+            vertical-align: middle; /* Alinhamento vertical com o logo */
+            padding: 0; /* Remove qualquer padding interno */
+            margin: 0 0 0 15px; /* Adiciona pequeno espaçamento à esquerda */
+        }
+        .title {
+            font-size: 1.8em;
+            font-weight: 500;
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .logout-btn, .import-btn {
+            background: var(--navy-blue);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-left: 10px; /* espaço entre botões */
+        }
+        .logout-btn:hover, .import-btn:hover {
+            background: var(--dark-navy-blue);
+        }
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-container">
+                <a href="/">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Clube Naval" class="logo">
+                </a>
+                <span class="elegant-text">CLUBE NAVAL</span>
+            </div>
+            <h1 class="title">Relatório de E-mails Enviados/Falhados</h1>
+            <div>
+                {% if auth_mode == 'DB' %}
+                <!-- VISÍVEL SOMENTE EM MODO DB -->
+                <a href="{{ url_for('change_password') }}" class="logout-btn">Alterar Senha</a>
+                {% endif %}
+                <a href="{{ url_for('import_emails') }}" class="import-btn">Importar</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </header>
+</body>
+</html>

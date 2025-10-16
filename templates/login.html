@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Relatório de E-mails - Clube Naval</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #C8102E;
+            --secondary-red: #A50021;
+            --navy-blue: #1A3C5E;
+            --light-gray: #F5F5F5;
+            --medium-gray: #E0E0E0;
+            --dark-gray: #333333;
+            --white: #FFFFFF;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--light-gray), var(--white));
+            color: var(--dark-gray);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .logo {
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: var(--navy-blue);
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input {
+            padding: 12px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        input:focus {
+            border-color: var(--primary-red);
+            outline: none;
+        }
+        button {
+            background: var(--primary-red);
+            color: var(--white);
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: var(--secondary-red);
+        }
+        .flash-message {
+            color: var(--primary-red);
+            margin-bottom: 15px;
+        }
+        footer {
+            position: absolute;
+            bottom: 10px;
+            color: var(--dark-gray);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Clube Naval" class="logo">
+        <h2>Login - Relatório de E-mails</h2>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-message">
+            {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="Usuário" required>
+            <input type="password" name="password" placeholder="Senha" required>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+    <footer><a href="https://www.henrique.tec.br" target="_blank" style="color: inherit; text-decoration: none;">
+  Desenvolvido por Henrique Fagundes - Todos os direitos reservados
+</a></footer>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de E-mails Enviados/Falhados - Clube Naval</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #C8102E; /* Vermelho principal do Clube Naval */
+            --secondary-red: #A50021;
+            --navy-blue: #1A3C5E; /* Azul naval escuro */
+            --dark-navy-blue: #0F2A45; /* Azul mais escuro para o modal */
+            --light-gray: #F5F5F5;
+            --medium-gray: #E0E0E0;
+            --dark-gray: #333333;
+            --white: #FFFFFF;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0; /* Remove padding horizontal para bordas coladas */
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .filters {
+            background: var(--light-gray);
+            padding: 20px; /* Mantém padding no filtro */
+            border-bottom: 1px solid var(--medium-gray);
+            border-radius: 8px 8px 0 0;
+        }
+        .filters form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin: 0;
+        }
+        .filters label {
+            font-weight: 500;
+            color: var(--navy-blue);
+            min-width: 150px;
+        }
+        .filters input, .filters button {
+            padding: 10px 12px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .filters input[type="checkbox"] {
+            width: auto;
+            padding: 0;
+            margin-right: 5px;
+        }
+        .filters .checkbox-label {
+            display: flex;
+            align-items: center;
+            min-width: auto;
+        }
+        .filters input:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+        .filters input:disabled {
+            background-color: #F8F8F8;
+            color: #999;
+        }
+        .filters button {
+            background: var(--primary-red);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .filters button:hover {
+            background: var(--secondary-red);
+        }
+        .results-info {
+            padding: 15px 20px;
+            background: var(--white);
+            border-bottom: 1px solid var(--medium-gray);
+            font-size: 14px;
+            color: var(--navy-blue);
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed; /* Colunas travadas, larguras proporcionais fixas */
+            margin: 0;
+            position: relative;
+        }
+        th, td {
+            padding: 12px 8px; /* Reduz padding horizontal para bordas mais coladas */
+            text-align: left;
+            vertical-align: top;
+            font-size: 15px; /* Fonte legível */
+            white-space: nowrap; /* Impede quebra de linhas na tabela */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Trunca com ... se necessário, mas com larguras maiores para evitar */
+            border-right: 1px solid var(--medium-gray); /* Linhas verticais visíveis */
+            border-bottom: 1px solid var(--medium-gray); /* Linhas horizontais */
+            position: relative;
+        }
+        th:last-child, td:last-child {
+            border-right: none; /* Remove borda direita na última coluna */
+        }
+        th {
+            background: var(--navy-blue);
+            color: var(--white);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 14px; /* Header legível */
+            letter-spacing: 0.5px;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* Larguras proporcionais ajustadas para 7 colunas: ID (5%), Data (10%), Hora (10%), De (20%), Para (20%), Assunto (25%), Status (10%) */
+        th:nth-child(1), td:nth-child(1) { width: 5%; } /* ID */
+        th:nth-child(2), td:nth-child(2) { width: 10%; } /* Data */
+        th:nth-child(3), td:nth-child(3) { width: 10%; } /* Hora */
+        th:nth-child(4), td:nth-child(4) { width: 20%; } /* De */
+        th:nth-child(5), td:nth-child(5) { width: 20%; } /* Para */
+        th:nth-child(6), td:nth-child(6) { width: 25%; } /* Assunto */
+        th:nth-child(7), td:nth-child(7) { width: 10%; } /* Status */
+        tr:hover {
+            background: var(--light-gray);
+        }
+        tr:nth-child(even) {
+            background: #FAFAFA;
+        }
+        .sort-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            color: var(--white);
+            transition: color 0.3s;
+            padding: 0;
+            width: auto;
+        }
+        .sort-btn:hover {
+            color: #FFD700; /* Dourado para destaque */
+        }
+        /* Estilo do modal */
+        .modal {
+            display: none;
+            position: absolute; /* Relativo ao documento; vamos compensar o scroll no JS */
+            background: rgba(15, 42, 69, 0.95); /* Azul naval mais escuro com leve transparência */
+            color: var(--white);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            z-index: 1000;
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+            width: auto; /* Tamanho ajustado ao conteúdo */
+            max-width: 400px; /* Limite máximo para evitar modais muito largos */
+            transition: opacity 0.3s ease; /* Transição suave para opacidade */
+            opacity: 1;
+        }
+        .modal.hidden {
+            opacity: 0;
+            pointer-events: none; /* Evita interação durante o fade-out */
+        }
+        .modal-content {
+            white-space: normal; /* Permite quebra de texto */
+            margin-bottom: 10px;
+            margin-right: 30px; /* Espaço para o ícone de copiar */
+        }
+        .copy-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--white);
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+        .copy-icon:hover {
+            color: var(--primary-red);
+        }
+        .clickable {
+            cursor: pointer;
+        }
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: var(--light-gray);
+            gap: 10px;
+        }
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            text-decoration: none;
+            border: 1px solid var(--medium-gray);
+            border-radius: 6px;
+            background: var(--white);
+            color: var(--dark-gray);
+            transition: all 0.3s;
+        }
+        .pagination a:hover {
+            background: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+        }
+        .pagination .current {
+            background: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+            font-weight: 500;
+        }
+        footer {
+            background: linear-gradient(135deg, var(--primary-red), var(--secondary-red));
+            color: var(--white);
+            text-align: center;
+            padding: 10px 0; /* Fininho */
+            font-size: 14px;
+            margin-top: 20px; /* Espaço após o main */
+        }
+        @media (max-width: 768px) {
+            .filters form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filters label {
+                min-width: auto;
+            }
+            table {
+                font-size: 14px;
+            }
+            th, td {
+                padding: 8px 6px;
+                white-space: normal; /* Permite quebra em mobile */
+            }
+            .modal {
+                max-width: 80%;
+                padding: 10px;
+                font-size: 13px;
+            }
+        }
+
+        /* Estilo para impressão */
+        @media print {
+            body, html {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            main {
+                width: 210mm;
+                height: 297mm;
+                margin: 0 auto;
+                padding: 20mm;
+                background-color: white;
+                box-shadow: none;
+                border: none;
+            }
+
+            .filters, .pagination, .results-info {
+                display: none; /* Oculta filtros, paginação e informações de resultados */
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                padding: 8px 10px;
+                border: 1px solid #ddd;
+                font-size: 12px;
+            }
+
+            th {
+                background-color: var(--navy-blue);
+                color: var(--white);
+            }
+
+            footer {
+                display: none; /* Esconde o rodapé durante a impressão */
+            }
+
+            .logo-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .signature {
+                text-align: center;
+                margin-top: 20px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <!-- Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content" id="modalContent"></div>
+        <button class="copy-icon" id="copyIcon" onclick="copyModalContent()" title="Copiar Informações">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+        </button>
+    </div>
+
+    <main>
+        <section class="filters">
+            <form method="GET">
+                <label for="start_date">Data Inicial (DIA/MÊS/ANO):</label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else (today if not search_email and not search_subject else '') }}">
+                
+                <label for="end_date">Data Final (DIA/MÊS/ANO):</label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else (today if not search_email and not search_subject else '') }}">
+                
+                <label for="search_email">Buscar por E-mail (Para):</label>
+                <input type="text" id="search_email" name="search_email" value="{{ search_email }}" placeholder="Ex: cnsocial.org.br">
+                
+                <label for="search_subject">Buscar por Assunto:</label>
+                <input type="text" id="search_subject" name="search_subject" value="{{ search_subject }}" placeholder="Ex: Reunião">
+                
+                <label class="checkbox-label" for="status_filter">
+                    <input type="checkbox" id="status_filter" name="status_filter" value="failed" {% if status_filter == 'failed' %}checked{% endif %}>
+                    Mostrar apenas falhados (status ≠ sent)
+                </label>
+                
+                <button type="submit">Filtrar</button>
+                {% if search_email or search_subject or start_date or end_date or status_filter %}
+                <button type="submit" name="clear_search" value="1">Limpar Busca</button>
+                <button type="button" id="printReportButton" class="import-btn" onclick="preparePrint()">Preparar impressão</button>
+                {% endif %}
+            </form>
+        </section>
+
+        {% if logs %}
+        {% if use_pagination %}
+        <div class="results-info">
+            Mostrando {{ (page-1)*50 + 1 }} a {{ (page-1)*50 + logs|length }} de {{ total_pages * 50 }} resultados.
+        </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Data{% if is_search %}<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'desc' %}asc{% else %}desc{% endif %}{% if use_pagination and page > 1 %}&page={{ page }}{% endif %}'">{{ '↓' if sort_by == 'date' and sort_order == 'desc' else '↑' if sort_by == 'date' else '↓' }}</button>{% endif %}</th>
+                    <th>Hora<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=time&sort_order={% if sort_by == 'time' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if use_pagination and page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'time' and sort_order == 'asc' else '↓' if sort_by == 'time' else '↕' }}</button></th>
+                    <th>De</th>
+                    <th>Para</th>
+                    <th>Assunto</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="id-col clickable" data-message-id="{{ log.message_id }}">{{ log.id }}</td>
+                    <td>{{ log.log_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ log.log_time }}</td>
+                    <td class="from-col clickable" data-ip="{{ log.origin_ip }}" data-host="{{ log.origin_host }}" data-from="{{ log.from_email }}">{{ log.from_email }}</td>
+                    <td class="to-col clickable">{{ log.to_email }}</td>
+                    <td class="subject-col clickable">{{ log.subject }}</td>
+                    <td>{{ log.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if use_pagination and total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page-1 }}">← Anterior</a>
+            {% endif %}
+            
+            <span class="current">Página {{ page }} de {{ total_pages }}</span>
+            
+            {% if page < total_pages %}
+            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page+1 }}">Próxima →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="no-results">
+            <p>Nenhum log encontrado{% if start_date and end_date and start_date != end_date %} entre {{ start_date }} e {{ end_date }}{% elif start_date %} em {{ start_date }}{% endif %}{% if search_email %} com filtro de e-mail '{{ search_email }}'{% endif %}{% if search_subject %} com filtro de assunto '{{ search_subject }}'{% endif %}{% if status_filter == 'failed' %} (apenas falhados){% endif %}.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer>
+        <a href="https://www.henrique.tec.br" target="_blank" style="color: inherit; text-decoration: none;">
+            Desenvolvido por Henrique Fagundes - Todos os direitos reservados
+        </a>
+    </footer>
+
+<script>
+    const modal = document.getElementById('infoModal');
+    const modalContent = document.getElementById('modalContent');
+    const copyIcon = document.getElementById('copyIcon');
+
+    function showModalAtEventPosition(evt) {
+        const offsetX = 10;
+        const offsetY = 10;
+
+        const pageX = evt.pageX || (evt.clientX + window.scrollX);
+        const pageY = evt.pageY || (evt.clientY + window.scrollY);
+
+        modal.style.display = 'block';
+        modal.classList.remove('hidden');
+        modal.style.visibility = 'hidden';
+
+        const modalWidth = Math.min(400, modal.offsetWidth || 400);
+        const modalHeight = modal.offsetHeight || 0;
+
+        const maxX = window.scrollX + window.innerWidth;
+        const maxY = window.scrollY + window.innerHeight;
+
+        let x = pageX + offsetX;
+        let y = pageY + offsetY;
+
+        if (x + modalWidth > maxX) x = Math.max(window.scrollX + 10, maxX - modalWidth - 10);
+        if (y + modalHeight > maxY) y = Math.max(window.scrollY + 10, pageY - modalHeight - 10);
+
+        if (x < window.scrollX + 10) x = window.scrollX + 10;
+        if (y < window.scrollY + 10) y = window.scrollY + 10;
+
+        modal.style.left = `${x}px`;
+        modal.style.top = `${y}px`;
+        modal.style.visibility = 'visible';
+    }
+
+    document.querySelectorAll('.id-col, .from-col, .to-col, .subject-col').forEach(cell => {
+        cell.addEventListener('click', function(event) {
+            event.stopPropagation();
+
+            if (this.classList.contains('id-col')) {
+                modalContent.innerHTML = `Message ID: ${this.dataset.messageId}`;
+            } else if (this.classList.contains('from-col')) {
+                modalContent.innerHTML = `IP Origem: ${this.dataset.ip}<br>Host Origem: ${this.dataset.host}<br>E-mail De: ${this.dataset.from}`;
+            } else if (this.classList.contains('to-col')) {
+                modalContent.innerHTML = this.innerText;
+            } else if (this.classList.contains('subject-col')) {
+                modalContent.innerHTML = this.innerText;
+            }
+
+            showModalAtEventPosition(event);
+            copyIcon.style.display = 'block';
+        });
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!modal.contains(event.target) && !event.target.classList.contains('clickable')) {
+            modal.classList.add('hidden');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modalContent.innerHTML = '';
+                copyIcon.style.display = 'none';
+            }, 300);
+        }
+    });
+
+    copyIcon.addEventListener('click', function() {
+        const text = modalContent.innerText;
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        tempInput.style.position = 'fixed';
+        tempInput.style.opacity = '0';
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try {
+            document.execCommand('copy');
+            modal.classList.add('hidden');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modalContent.innerHTML = '';
+                copyIcon.style.display = 'none';
+            }, 300);
+        } catch (err) {
+            console.error('Erro ao copiar: ', err);
+            alert('Falha ao copiar o conteúdo. Por favor, copie manualmente.');
+            modal.classList.add('hidden');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modalContent.innerHTML = '';
+                copyIcon.style.display = 'none';
+            }, 300);
+        } finally {
+            document.body.removeChild(tempInput);
+        }
+    });
+
+    // Função para preparar a impressão com os parâmetros atuais
+    function preparePrint() {
+        // Obtém os parâmetros atuais da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let printUrl = '/print-report';
+
+        // Adiciona os parâmetros à URL de impressão
+        if (urlParams.toString()) {
+            printUrl += '?' + urlParams.toString();
+        }
+
+        // Abre a nova janela com os parâmetros
+        window.open(printUrl, '_blank');
+    }
+</script>
+</body>
+</html>

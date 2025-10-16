@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de E-mails Enviados/Falhados - Imprimir</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #fff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        main {
+            width: 277mm; /* 297mm - 10mm esquerda - 10mm direita */
+            margin: 0 auto;
+            padding: 10mm 10mm; /* Margens de 1,0cm (10mm) à esquerda, direita, topo e base */
+            text-align: center;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #f9f9f9, #ffffff);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .logo-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-header img {
+            max-width: 80px; /* Logo reduzido */
+            height: auto;
+        }
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: normal;
+            color: #1A3C5E;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            table-layout: fixed; /* Colunas com largura fixa */
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            page-break-inside: auto; /* Permite que a tabela se divida entre páginas */
+        }
+        tr {
+            page-break-inside: avoid; /* Evita que uma linha seja cortada no meio */
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+            white-space: nowrap; /* Impede quebra de linha nas células */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Exibe "..." se o conteúdo for longo */
+        }
+        th {
+            background-color: #1A3C5E;
+            color: white;
+            font-weight: 500;
+        }
+        /* Larguras ajustadas para as colunas */
+        th:nth-child(1), td:nth-child(1) { width: 15%; } /* Data */
+        th:nth-child(2), td:nth-child(2) { width: 15%; } /* Hora */
+        th:nth-child(3), td:nth-child(3) { width: 25%; } /* De */
+        th:nth-child(4), td:nth-child(4) { width: 20%; } /* Para */
+        th:nth-child(5), td:nth-child(5) { width: 20%; } /* Assunto */
+        th:nth-child(6), td:nth-child(6) { width: 15%; } /* Status */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            color: #555;
+            font-style: italic;
+        }
+        .print-button {
+            background-color: #C8102E;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+            display: block;
+            margin: 20px auto 0;
+            box-shadow: 0 2px 5px rgba(200, 16, 46, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .print-button:hover {
+            background-color: #A50021;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(200, 16, 46, 0.4);
+        }
+        /* Estilo para impressão */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 10mm 10mm 10mm 10mm; /* Margens de 1,0cm (10mm) em todos os lados */
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            main {
+                width: 277mm;
+                padding: 10mm 10mm;
+                box-shadow: none;
+                background: none;
+                margin: 0;
+                orphans: 2; /* Mínimo de linhas na parte inferior de uma página */
+                widows: 2; /* Mínimo de linhas na parte superior da próxima página */
+            }
+            table {
+                box-shadow: none;
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            .print-button {
+                display: none; /* Oculta o botão Imprimir na versão impressa */
+            }
+            @media print and (min-page-count: 1) {
+                @page :blank {
+                    display: none;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="logo-header">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo do Sistema" />
+        </div>
+
+        <h2>Relatório de E-mails Enviados/Falhados</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>De</th>
+                    <th>Para</th>
+                    <th>Assunto</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.log_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ log.log_time }}</td>
+                    <td>{{ log.from_email }}</td>
+                    <td>{{ log.to_email }}</td>
+                    <td>{{ log.subject }}</td>
+                    <td>{{ log.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <footer>
+            <p>Assinado por: {{ session['username'] }}</p>
+        </footer>
+
+        <!-- Botão Imprimir abaixo da assinatura -->
+        <button class="print-button" id="printButton">Imprimir</button>
+    </main>
+
+    <script>
+        // Impede que a impressão seja chamada automaticamente ao carregar a página
+        document.getElementById('printButton').addEventListener('click', function() {
+            // Verifica se há logs para evitar impressão em branco
+            const logs = document.querySelectorAll('tbody tr');
+            if (logs.length > 0) {
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>
