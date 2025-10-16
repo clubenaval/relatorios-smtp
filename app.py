@@ -149,6 +149,7 @@ def index():
     status_filter = request.args.get('status_filter')
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
+    page = request.args.get('page', 1, type=int)
 
     today = datetime.now(pytz.timezone(TZ)).date().isoformat()
 
@@ -186,7 +187,8 @@ def index():
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
 
-        query = "SELECT * FROM email_logs"
+        # Contar total de registros para paginação
+        count_query = "SELECT COUNT(*) AS total FROM email_logs"
         params = []
         where = []
         if use_date_filter:
@@ -204,6 +206,15 @@ def index():
         if status_filter == 'failed':
             where.append("status != 'sent'")
         if where:
+            count_query += " WHERE " + " AND ".join(where)
+
+        cur.execute(count_query, params)
+        total_records = cur.fetchone()['total']
+        total_pages = (total_records + 49) // 50  # Arredonda para cima
+
+        # Consulta principal com LIMIT e OFFSET
+        query = "SELECT * FROM email_logs"
+        if where:
             query += " WHERE " + " AND ".join(where)
 
         order_direction = "ASC" if sort_order == 'asc' else "DESC"
@@ -212,11 +223,15 @@ def index():
         else:
             query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
 
+        query += " LIMIT 50 OFFSET %s"
+        params.append((page - 1) * 50)
+
         cur.execute(query, params)
         logs = cur.fetchall()
         return render_template('report.html', logs=logs, start_date=start_date, end_date=end_date, start_time=start_time, end_time=end_time,
                                search_email=search_email, search_subject=search_subject, status_filter=status_filter, 
-                               sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, use_time_filter=use_time_filter, auth_mode=AUTH_MODE)
+                               sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, use_time_filter=use_time_filter, 
+                               auth_mode=AUTH_MODE, page=page, total_pages=total_pages, use_pagination=True)
 
     except Exception as e:
         flash(f'Erro ao consultar o banco de dados: {e}')

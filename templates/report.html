@@ -421,17 +421,15 @@
         </form>
         </div>
         {% if logs %}
-        {% if use_pagination %}
         <div class="results-info">
-            Mostrando {{ (page-1)*50 + 1 }} a {{ (page-1)*50 + logs|length }} de {{ total_pages * 50 }} resultados.
+            Mostrando {{ (page-1)*50 + 1 }} a {{ (page-1)*50 + logs|length }} de {{ total_records if total_records is defined else logs|length }} resultados.
         </div>
-        {% endif %}
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Data{% if is_search %}<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'desc' %}asc{% else %}desc{% endif %}{% if use_pagination and page > 1 %}&page={{ page }}{% endif %}'">{{ '↓' if sort_by == 'date' and sort_order == 'desc' else '↑' if sort_by == 'date' else '↓' }}</button>{% endif %}</th>
-                    <th>Hora<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=time&sort_order={% if sort_by == 'time' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if use_pagination and page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'time' and sort_order == 'asc' else '↓' if sort_by == 'time' else '↕' }}</button></th>
+                    <th>Data{% if is_search %}<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'desc' %}asc{% else %}desc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↓' if sort_by == 'date' and sort_order == 'desc' else '↑' if sort_by == 'date' else '↓' }}</button>{% endif %}</th>
+                    <th>Hora<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by=time&sort_order={% if sort_by == 'time' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'time' and sort_order == 'asc' else '↓' if sort_by == 'time' else '↕' }}</button></th>
                     <th>De</th>
                     <th>Para</th>
                     <th>Assunto</th>
@@ -453,16 +451,16 @@
             </tbody>
         </table>
         
-        {% if use_pagination and total_pages > 1 %}
+        {% if total_pages > 1 %}
         <div class="pagination">
             {% if page > 1 %}
-            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page-1 }}">← Anterior</a>
+            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page-1 }}">← Anterior</a>
             {% endif %}
             
             <span class="current">Página {{ page }} de {{ total_pages }}</span>
             
             {% if page < total_pages %}
-            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page+1 }}">Próxima →</a>
+            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page+1 }}">Próxima →</a>
             {% endif %}
         </div>
         {% endif %}
