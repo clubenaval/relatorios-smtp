@@ -128,7 +128,7 @@ services:
       # Importante: Apenas o arquivo específico mail.log é mapeado, não o diretório inteiro, para garantir
       # que a aplicação leia exclusivamente o log ativo do Exim (decodificado com DECODE_SUBJECT=yes).
       # O arquivo é montado em modo leitura, e a aplicação não realiza nenhuma modificação no arquivo original.
-      - /srv/smtp-relay/logs/mail.log:/app/logs/mail.log
+      - /srv/smtp-relay/logs:/app/logs
     ports:
       - "5000:5000"
     depends_on:
