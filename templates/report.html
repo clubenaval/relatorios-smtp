@@ -326,7 +326,22 @@
                 text-align: center;
                 margin-bottom: 20px;
             }
-
+.filters {
+    display: block !important;
+    overflow: hidden !important;
+}
+.filters table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+.filters table td {
+    padding: 0px !important;
+    vertical-align: middle !important;
+}
+.filters table td:first-child {
+    width: 160px !important;
+}
             .signature {
                 text-align: center;
                 margin-top: 20px;
@@ -350,34 +365,61 @@
     </div>
 
     <main>
-        <section class="filters">
-            <form method="GET">
-                <label for="start_date">Data Inicial (DIA/MÊS/ANO):</label>
-                <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else (today if not search_email and not search_subject else '') }}">
-                
-                <label for="end_date">Data Final (DIA/MÊS/ANO):</label>
-                <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else (today if not search_email and not search_subject else '') }}">
-                
-                <label for="search_email">Buscar por E-mail (Para):</label>
-                <input type="text" id="search_email" name="search_email" value="{{ search_email }}" placeholder="Ex: cnsocial.org.br">
-                
-                <label for="search_subject">Buscar por Assunto:</label>
-                <input type="text" id="search_subject" name="search_subject" value="{{ search_subject }}" placeholder="Ex: Reunião">
-                
-                <label class="checkbox-label" for="status_filter">
-                    <input type="checkbox" id="status_filter" name="status_filter" value="failed" {% if status_filter == 'failed' %}checked{% endif %}>
-                    Mostrar apenas falhados (status ≠ sent)
-                </label>
-                
-                <button type="submit">Filtrar</button>
-                {% if search_email or search_subject or start_date or end_date or status_filter %}
-                <button type="submit" name="clear_search" value="1">Limpar Busca</button>
-                <button type="button" id="printReportButton" class="import-btn" onclick="preparePrint()">Preparar impressão</button>
-                <button type="button" class="export-btn" onclick="exportCSV()">CSV</button>
-                {% endif %}
-            </form>
-        </section>
-
+        <div class="filters" style="display: block; overflow: hidden;">
+        <form action="/" method="GET">
+            <table style="border-collapse: collapse; width: 100%; table-layout: fixed;">
+            <tr>
+                <td style="width: 15%; padding: 4px 6px; text-align: right;">
+                <label for="start_date">Data Inicial:</label>
+                </td>
+                <td style="width: 20%; padding: 4px;">
+                <input type="date" id="start_date" name="start_date" 
+                    value="{{ start_date if start_date else '' }}"
+                    {% if search_email or search_subject %} disabled {% endif %}
+                    style="width: 100%; padding: 4px;">
+                </td>
+                <td style="width: 15%; padding: 4px 6px; text-align: right;">
+                <label for="end_date">Data Final:</label>
+                </td>
+                <td style="width: 20%; padding: 4px;">
+                <input type="date" id="end_date" name="end_date"
+                    value="{{ end_date if end_date else '' }}"
+                    {% if search_email or search_subject %} disabled {% endif %}
+                    style="width: 100%; padding: 4px;">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 6px; text-align: right;"><label for="start_time">Horário Inicial:</label></td>
+                <td style="padding: 4px;"><input type="time" id="start_time" name="start_time"
+                value="{{ start_time if start_time else '' }}" style="width: 100%; padding: 4px;"></td>
+                <td style="padding: 4px 6px; text-align: right;"><label for="end_time">Horário Final:</label></td>
+                <td style="padding: 4px;"><input type="time" id="end_time" name="end_time"
+                value="{{ end_time if end_time else '' }}" style="width: 100%; padding: 4px;"></td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 6px; text-align: right;"><label for="search_email">Para (e-mail):</label></td>
+                <td style="padding: 4px;"><input type="text" id="search_email" name="search_email"
+                value="{{ search_email if search_email else '' }}" placeholder="Pesquisar por e-mail"
+                style="width: 100%; padding: 4px;"></td>
+                <td style="padding: 4px 6px; text-align: right;"><label for="search_subject">Assunto:</label></td>
+                <td style="padding: 4px;"><input type="text" id="search_subject" name="search_subject"
+                value="{{ search_subject if search_subject else '' }}" placeholder="Pesquisar por assunto"
+                style="width: 100%; padding: 4px;"></td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 6px; text-align: right;"><label>Apenas falhados</label></td>
+                <td style="padding: 4px;"><input type="checkbox" name="status_filter" value="failed"
+                {% if status_filter == 'failed' %} checked {% endif %}></td>
+                <td></td>
+                <td style="padding: 4px; text-align: right;">
+                <button type="submit" style="padding: 5px 10px;">Filtrar</button>
+                <button type="button" class="export-btn" onclick="preparePrint()" style="padding: 5px 10px;">Imprimir</button>
+                <button type="button" class="export-btn" onclick="exportCSV()" style="padding: 5px 10px;">Exportar CSV</button>
+                </td>
+            </tr>
+            </table>
+        </form>
+        </div>
         {% if logs %}
         {% if use_pagination %}
         <div class="results-info">

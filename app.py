@@ -134,30 +134,28 @@ def import_emails():
             flash(f'Importação realizada com sucesso. {rowcount} novos logs inseridos.')
     except Exception as e:
         logging.error(f"Erro ao executar importação manual: {e}")
-        flash(f'Erro ao executar importação: {str(e)}')
+        flash(f'Erro ao executar importação: {e}')
     return redirect(url_for('index'))
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 @login_required
 def index():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
     search_email = request.args.get('search_email', '').strip()
     search_subject = request.args.get('search_subject', '').strip()
     status_filter = request.args.get('status_filter')
-    page = int(request.args.get('page', 1))
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
-
-    if request.args.get('clear_search'):
-        return redirect('/')
 
     today = datetime.now(pytz.timezone(TZ)).date().isoformat()
 
     use_date_filter = bool(start_date or end_date)
     if use_date_filter:
         if start_date and end_date and start_date > end_date:
-            logging.warning("Data inicial maior que final; ignorando filtro.")
+            logging.warning("Data inicial maior que final; ignorando filtro de data.")
             use_date_filter = False
             start_date = None
             end_date = None
@@ -166,38 +164,27 @@ def index():
         elif end_date and not start_date:
             start_date = end_date
 
+    use_time_filter = bool(start_time or end_time)
+    if use_time_filter:
+        if start_time and end_time and start_time > end_time:
+            logging.warning("Horário inicial maior que final; ignorando filtro de horário.")
+            use_time_filter = False
+            start_time = None
+            end_time = None
+        if start_time and not end_time:
+            end_time = start_time
+        elif end_time and not start_time:
+            start_time = end_time
+
     is_search = bool(search_email or search_subject)
     if not is_search and not use_date_filter:
         start_date = today
         end_date = today
         use_date_filter = True
 
-    per_page = 100  # Número de itens por página
     try:
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
-
-        count_query = "SELECT COUNT(*) as total FROM email_logs"
-        params = []
-        where = []
-        if use_date_filter:
-            where.append("log_date BETWEEN %s AND %s")
-            params.extend([start_date, end_date])
-        if search_email:
-            where.append("to_email LIKE %s")
-            params.append(f"%{search_email}%")
-        if search_subject:
-            where.append("subject LIKE %s")
-            params.append(f"%{search_subject}%")
-        if status_filter == 'failed':
-            where.append("status != 'sent'")
-        if where:
-            count_query += " WHERE " + " AND ".join(where)
-        cur.execute(count_query, params)
-        total = cur.fetchone()['total']
-        total_pages = (total + per_page - 1) // per_page if total > 0 else 0
-
-        use_pagination = total > per_page
 
         query = "SELECT * FROM email_logs"
         params = []
@@ -205,6 +192,9 @@ def index():
         if use_date_filter:
             where.append("log_date BETWEEN %s AND %s")
             params.extend([start_date, end_date])
+        if use_time_filter:
+            where.append("log_time BETWEEN %s AND %s")
+            params.extend([start_time, end_time])
         if search_email:
             where.append("to_email LIKE %s")
             params.append(f"%{search_email}%")
@@ -222,18 +212,15 @@ def index():
         else:
             query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
 
-        if use_pagination:
-            query += " LIMIT %s OFFSET %s"
-            params.extend([per_page, (page - 1) * per_page])
-
         cur.execute(query, params)
         logs = cur.fetchall()
-        return render_template('report.html', logs=logs, today=today, start_date=start_date, end_date=end_date,
-                               search_email=search_email, search_subject=search_subject, status_filter=status_filter,
-                               page=page, total_pages=total_pages, is_search=is_search, use_pagination=use_pagination,
-                               sort_by=sort_by, sort_order=sort_order, auth_mode=AUTH_MODE)
+        return render_template('report.html', logs=logs, start_date=start_date, end_date=end_date, start_time=start_time, end_time=end_time,
+                               search_email=search_email, search_subject=search_subject, status_filter=status_filter, 
+                               sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, use_time_filter=use_time_filter, auth_mode=AUTH_MODE)
+
     except Exception as e:
-        return f"Erro ao consultar o banco de dados: {e}"
+        flash(f'Erro ao consultar o banco de dados: {e}')
+        return redirect(url_for('index'))
     finally:
         try:
             cur.close()
@@ -246,23 +233,20 @@ def index():
 def print_report():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
     search_email = request.args.get('search_email', '').strip()
     search_subject = request.args.get('search_subject', '').strip()
     status_filter = request.args.get('status_filter')
-    # Removendo paginação para incluir todos os resultados
-    page = None  # Ignora o parâmetro page
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
-
-    if request.args.get('clear_search'):
-        return redirect('/print-report')
 
     today = datetime.now(pytz.timezone(TZ)).date().isoformat()
 
     use_date_filter = bool(start_date or end_date)
     if use_date_filter:
         if start_date and end_date and start_date > end_date:
-            logging.warning("Data inicial maior que final; ignorando filtro.")
+            logging.warning("Data inicial maior que final; ignorando filtro de data.")
             use_date_filter = False
             start_date = None
             end_date = None
@@ -270,6 +254,18 @@ def print_report():
             end_date = start_date
         elif end_date and not start_date:
             start_date = end_date
+
+    use_time_filter = bool(start_time or end_time)
+    if use_time_filter:
+        if start_time and end_time and start_time > end_time:
+            logging.warning("Horário inicial maior que final; ignorando filtro de horário.")
+            use_time_filter = False
+            start_time = None
+            end_time = None
+        if start_time and not end_time:
+            end_time = start_time
+        elif end_time and not start_time:
+            start_time = end_time
 
     is_search = bool(search_email or search_subject)
     if not is_search and not use_date_filter:
@@ -287,6 +283,9 @@ def print_report():
         if use_date_filter:
             where.append("log_date BETWEEN %s AND %s")
             params.extend([start_date, end_date])
+        if use_time_filter:
+            where.append("log_time BETWEEN %s AND %s")
+            params.extend([start_time, end_time])
         if search_email:
             where.append("to_email LIKE %s")
             params.append(f"%{search_email}%")
@@ -323,6 +322,8 @@ def print_report():
 def export_csv():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
     search_email = request.args.get('search_email', '').strip()
     search_subject = request.args.get('search_subject', '').strip()
     status_filter = request.args.get('status_filter')
@@ -343,6 +344,18 @@ def export_csv():
         elif end_date and not start_date:
             start_date = end_date
 
+    use_time_filter = bool(start_time or end_time)
+    if use_time_filter:
+        if start_time and end_time and start_time > end_time:
+            logging.warning("Horário inicial maior que final; ignorando filtro de horário.")
+            use_time_filter = False
+            start_time = None
+            end_time = None
+        if start_time and not end_time:
+            end_time = start_time
+        elif end_time and not start_time:
+            start_time = end_time
+
     is_search = bool(search_email or search_subject)
     if not is_search and not use_date_filter:
         start_date = today
@@ -359,6 +372,9 @@ def export_csv():
         if use_date_filter:
             where.append("log_date BETWEEN %s AND %s")
             params.extend([start_date, end_date])
+        if use_time_filter:
+            where.append("log_time BETWEEN %s AND %s")
+            params.extend([start_time, end_time])
         if search_email:
             where.append("to_email LIKE %s")
             params.append(f"%{search_email}%")
