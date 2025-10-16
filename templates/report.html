@@ -87,6 +87,20 @@
         .filters button:hover {
             background: var(--secondary-red);
         }
+        .export-btn {
+            background: var(--navy-blue);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-left: 10px;
+        }
+        .export-btn:hover {
+            background: var(--dark-navy-blue);
+        }
         .results-info {
             padding: 15px 20px;
             background: var(--white);
@@ -359,6 +373,7 @@
                 {% if search_email or search_subject or start_date or end_date or status_filter %}
                 <button type="submit" name="clear_search" value="1">Limpar Busca</button>
                 <button type="button" id="printReportButton" class="import-btn" onclick="preparePrint()">Preparar impressão</button>
+                <button type="button" class="export-btn" onclick="exportCSV()">CSV</button>
                 {% endif %}
             </form>
         </section>
@@ -531,6 +546,20 @@
 
         // Abre a nova janela com os parâmetros
         window.open(printUrl, '_blank');
+    }
+
+    function exportCSV() {
+        // Obtém os parâmetros atuais da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let exportUrl = '/export-csv';
+
+        // Adiciona os parâmetros à URL de exportação
+        if (urlParams.toString()) {
+            exportUrl += '?' + urlParams.toString();
+        }
+
+        // Abre a URL para download
+        window.location.href = exportUrl;
     }
 </script>
 </body>

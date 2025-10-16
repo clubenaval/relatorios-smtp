@@ -9,6 +9,8 @@ from auth import authenticate, login_required
 from datetime import datetime
 import pytz
 import threading
+import csv
+import io
 
 logging.basicConfig(level=logging.INFO)
 
@@ -170,13 +172,10 @@ def index():
         end_date = today
         use_date_filter = True
 
-    use_pagination = not is_search or use_date_filter
-
+    per_page = 100  # Número de itens por página
     try:
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
-
-        per_page = 50 if use_pagination else None
 
         count_query = "SELECT COUNT(*) as total FROM email_logs"
         params = []
@@ -197,6 +196,8 @@ def index():
         cur.execute(count_query, params)
         total = cur.fetchone()['total']
         total_pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+        use_pagination = total > per_page
 
         query = "SELECT * FROM email_logs"
         params = []
@@ -307,6 +308,101 @@ def print_report():
         cur.execute(query, params)
         logs = cur.fetchall()
         return render_template('print_report.html', logs=logs)
+
+    except Exception as e:
+        return f"Erro ao consultar o banco de dados: {e}"
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except:
+            pass
+
+@app.route('/export-csv')
+@login_required
+def export_csv():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    search_email = request.args.get('search_email', '').strip()
+    search_subject = request.args.get('search_subject', '').strip()
+    status_filter = request.args.get('status_filter')
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    today = datetime.now(pytz.timezone(TZ)).date().isoformat()
+
+    use_date_filter = bool(start_date or end_date)
+    if use_date_filter:
+        if start_date and end_date and start_date > end_date:
+            logging.warning("Data inicial maior que final; ignorando filtro.")
+            use_date_filter = False
+            start_date = None
+            end_date = None
+        if start_date and not end_date:
+            end_date = start_date
+        elif end_date and not start_date:
+            start_date = end_date
+
+    is_search = bool(search_email or search_subject)
+    if not is_search and not use_date_filter:
+        start_date = today
+        end_date = today
+        use_date_filter = True
+
+    try:
+        conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+        cur = conn.cursor(dictionary=True)
+
+        query = "SELECT * FROM email_logs"
+        params = []
+        where = []
+        if use_date_filter:
+            where.append("log_date BETWEEN %s AND %s")
+            params.extend([start_date, end_date])
+        if search_email:
+            where.append("to_email LIKE %s")
+            params.append(f"%{search_email}%")
+        if search_subject:
+            where.append("subject LIKE %s")
+            params.append(f"%{search_subject}%")
+        if status_filter == 'failed':
+            where.append("status != 'sent'")
+        if where:
+            query += " WHERE " + " AND ".join(where)
+
+        order_direction = "ASC" if sort_order == 'asc' else "DESC"
+        if sort_by == 'date':
+            query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
+        else:
+            query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
+
+        cur.execute(query, params)
+        logs = cur.fetchall()
+
+        # Gerar CSV
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['Message ID', 'Data', 'Hora', 'De', 'Para', 'Status', 'Host Origem', 'IP Origem', 'Assunto'])
+
+        for log in logs:
+            writer.writerow([
+                log['message_id'],
+                log['log_date'],
+                log['log_time'],
+                log['from_email'],
+                log['to_email'],
+                log['status'],
+                log['origin_host'],
+                log['origin_ip'],
+                log['subject']
+            ])
+
+        response = app.response_class(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment; filename=relatorio_emails.csv'}
+        )
+        return response
 
     except Exception as e:
         return f"Erro ao consultar o banco de dados: {e}"
