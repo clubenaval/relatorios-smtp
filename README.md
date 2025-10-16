@@ -1,224 +1,199 @@
-# Relatórios SMTP - Clube Naval
+# **Relatórios SMTP - Clube Naval**
 
-## Introdução e Visão Geral
+## **Descrição do Projeto**
 
-O **Relatórios SMTP - Clube Naval** é uma aplicação web avançada e escalável projetada especificamente para o monitoramento, processamento e visualização de logs de e-mails enviados e falhados em ambientes SMTP baseados em Exim. Desenvolvida para atender às necessidades do Clube Naval, esta solução integra ferramentas modernas de backend e frontend para fornecer relatórios detalhados, seguros e acessíveis. A aplicação extrai dados de arquivos de log gerados pelo servidor SMTP, armazena-os em um banco de dados relacional e oferece uma interface intuitiva para consultas e análises.
+O **Relatórios SMTP - Clube Naval** é uma aplicação web desenvolvida para o monitoramento e análise de logs de e-mails enviados e falhados em servidores SMTP que utilizam Exim. A solução oferece recursos avançados de importação de logs, visualização de relatórios detalhados e exportação de dados. A aplicação é ideal para organizações que necessitam de um sistema robusto e escalável para gerenciar grandes volumes de logs de e-mail.
 
-Esta ferramenta foi criada para resolver problemas comuns em ambientes de envio de e-mails em massa, como rastreamento de falhas, auditoria de envios e conformidade com regulamentações de privacidade. Ao contrário de soluções genéricas, ela é otimizada para o formato de logs do Exim, com suporte a decodificação de assuntos MIME e agregação de status de envio. O sistema é totalmente conteinerizado usando Docker, permitindo implantações rápidas em ambientes locais, em nuvem ou híbridos.
+Esta aplicação foi projetada com **Docker** para facilitar a implantação e o gerenciamento de ambientes, além de contar com suporte a múltiplos modos de autenticação e agendamento automatizado de tarefas.
 
-A motivação para o desenvolvimento desta aplicação surgiu da necessidade de uma ferramenta personalizada que pudesse lidar com volumes altos de logs sem comprometer a performance, enquanto mantém a segurança e a usabilidade. Inicialmente concebida como um script simples de parsing, evoluiu para uma aplicação full-stack com autenticação robusta, agendamento automático e recursos de relatórios avançados. Hoje, ela suporta múltiplos modos de operação, integrações com sistemas de autenticação empresarial e é extensível para futuras funcionalidades, como alertas em tempo real ou integração com ferramentas de BI.
+---
 
-### Benefícios Principais
-- **Eficiência Operacional**: Automatiza o processamento de logs, reduzindo o tempo gasto em análises manuais.
-- **Segurança e Conformidade**: Logs sensíveis são armazenados de forma segura, com acessos controlados e auditoria implícita.
-- **Escalabilidade**: Projetada para lidar com milhares de entradas diárias, com opções de configuração para ambientes de alta demanda.
-- **Facilidade de Uso**: Interface web amigável, com filtros intuitivos e opções de exportação para impressão.
-- **Integração**: Compatível com servidores SMTP existentes, sem necessidade de modificações no fluxo de e-mails.
+## **Características Principais**
 
-Comparado a ferramentas como Postfix ou Sendmail log analyzers, esta solução se destaca pela integração nativa com Exim, suporte a LDAP para autenticação empresarial e foco em relatórios visuais. Ela também evita dependências excessivas, mantendo uma pegada leve enquanto oferece funcionalidades avançadas.
+* **Processamento de Logs**: Leitura e importação de dados dos arquivos `full_subjects.log` e `mail.log`, extraindo informações de e-mails como remetente, destinatário, assunto e status.
+* **Relatórios Avançados**: Interface web para exibir relatórios de e-mails enviados, falhados e rejeitados com filtros dinâmicos (data, e-mail, assunto e status).
+* **Autenticação Segura**: Suporte para autenticação via **Active Directory (AD)** ou **MySQL**.
+* **Agendamento e Automação**: Agendamento de importação de logs em intervalos de minutos ou horários fixos, com execução automática em segundo plano.
+* **Dockerização Completa**: Utiliza **Docker** e **Docker Compose** para facilitar a implantação, tanto em ambientes locais quanto em nuvem.
 
-## Funcionalidades Detalhadas
+---
 
-A aplicação oferece um conjunto abrangente de funcionalidades, divididas em categorias para melhor compreensão.
+## **Tecnologias Utilizadas**
 
-### Processamento e Importação de Logs
-- **Parsing Inteligente**: Utiliza expressões regulares otimizadas para extrair dados de `mail.log` (status de envio, confirmação de 'Completed') e `full_subjects.log` (detalhes como remetente, destinatário, assunto, host/IP). Apenas entradas com dados completos e confirmação de envio/rejeição são importadas, evitando ruído no banco de dados.
-- **Agregação de Status**: Status é agregado como 'sent' ou 'rejected' baseado em linhas de log específicas (=>, -> para sucesso; ** para falha). IDs pendentes (sem 'Completed') são rastreados para importações futuras.
-- **Evitando Duplicatas**: Índice único no banco de dados (`message_id`, `to_email`, `status`) garante integridade dos dados.
-- **Importação Inicial e Manual**: Execução automática na inicialização e rota dedicada (`/import-emails`) para importações sob demanda.
-- **Tratamento de Erros**: Logs detalhados para falhas de parsing, com mensagens específicas para IDs incompletos ou ausentes.
+* **Backend**: Python 3.x, Flask
+* **Banco de Dados**: MySQL
+* **Autenticação**: LDAP (para AD) ou MySQL
+* **Agendamento**: `schedule` e `threading` para execução em segundo plano
+* **Docker**: Docker Compose para orquestrar os contêineres
+* **Frontend**: HTML5, CSS3, JavaScript, Jinja2 (para templates dinâmicos)
 
-### Relatórios e Interface Web
-- **Filtros Avançados**: Por data (intervalo ou dia específico), e-mail destinatário (busca parcial), assunto (busca parcial) e status (todos ou apenas falhados).
-- **Paginação e Ordenação**: 50 registros por página, com ordenação por data/hora (ascendente/descendente). Sem paginação em modo de impressão.
-- **Visualização Detalhada**: Colunas clicáveis para modais com detalhes expandidos (ex.: IP/host de origem, ID completo). Suporte a cópia de conteúdo via ícone.
-- **Relatório para Impressão**: Rota dedicada (`/print-report`) com todos os resultados sem paginação, otimizada para exportação PDF ou impressão.
-- **Resultados Informativos**: Exibe contagem total de resultados e páginas, com opções para limpar filtros.
-- **Design Responsivo**: Interface adaptável a dispositivos móveis, com estilos modernos usando fontes Roboto e cores temáticas do Clube Naval.
+---
 
-### Autenticação e Gerenciamento de Usuários
-- **Modos de Autenticação**: Local via MySQL (`AUTH_MODE=DB`) ou LDAP/Active Directory (`AUTH_MODE=AD`), com verificação de grupo para autorização.
-- **Alteração de Senha**: Exclusiva para modo DB, com validações de comprimento, confirmação e hash seguro (Werkzeug).
-- **Sessão Segura**: Uso de sessões Flask com chave secreta, logout explícito e mensagens flash para feedback.
-- **Proteção de Rotas**: Decorador `@login_required` para restringir acesso a relatórios e importações.
+## **Arquitetura**
 
-### Agendamento e Automação
-- **Modos de Agendamento**: Intervalo em minutos ou horário fixo diário, configurável via variáveis de ambiente.
-- **Execução em Thread**: Scheduler rodando em background para não bloquear a aplicação web.
-- **Resumo de Importação**: Logs com contagens de IDs totais, importados e pendentes após cada execução.
+A arquitetura do projeto é baseada em contêineres Docker, com a seguinte estrutura:
 
-### Configurações Avançadas
-- **Fuso Horário**: Suporte a qualquer timezone válido (ex.: America/Sao_Paulo) via `TZ`.
-- **Porta do Banco**: Configurável via `DB_PORT` (padrão 3306), ideal para setups não padrão.
-- **Validação de Ambiente**: Checagem rigorosa na inicialização para evitar erros de configuração.
+1. **Backend**: Responsável pelo processamento dos logs, autenticação de usuários e apresentação dos relatórios.
+2. **Banco de Dados**: Utiliza MySQL para armazenar os logs de e-mails e as credenciais dos usuários.
+3. **Servidor SMTP (Exim)**: Usado para emular um servidor de envio de e-mails, necessário para gerar logs de e-mails no formato Exim.
 
-### Recursos Adicionais
-- **Cabeçalhos Anti-Cache**: Para páginas sensíveis, garantindo dados frescos.
-- **Migração de Esquema**: Ajustes automáticos no banco para compatibilidade com versões anteriores.
-- **Suporte a Unicode**: Parsing robusto para assuntos e e-mails com caracteres especiais.
+---
 
-## Tecnologias Utilizadas e Justificativas
+## **Docker Compose: Arquivo Detalhado**
 
-A escolha das tecnologias foi guiada por critérios de performance, segurança, facilidade de manutenção e compatibilidade.
+A configuração do **docker-compose.yml** define os serviços que compõem a aplicação, incluindo o **Flask**, o **MySQL** e o **Exim**. Abaixo segue o arquivo `docker-compose.yml` detalhado, com todas as variáveis e explicações sobre cada configuração.
 
-- **Backend: Python 3.12 com Flask**: Flask é leve e flexível, ideal para aplicações web simples como esta. Python oferece bibliotecas maduras para parsing (re) e scheduling (schedule).
-- **Banco de Dados: MySQL 5.7.44**: Robusto para dados relacionais, com suporte a índices únicos para evitar duplicatas. Versão escolhida por estabilidade e compatibilidade com Docker.
-- **Autenticação: ldap3 e Werkzeug**: ldap3 para integração segura com AD; Werkzeug para hashing de senhas no modo DB.
-- **Outras Bibliotecas**:
-  - `mysql-connector-python`: Conexão eficiente ao MySQL.
-  - `schedule`: Agendamento simples e sem dependências externas.
-  - `pytz`: Manipulação de fusos horários.
-  - `threading`: Para rodar o scheduler em paralelo.
-- **Conteinerização: Docker e Docker Compose**: Facilita a portabilidade, com serviços isolados para Exim, MySQL e Flask. Healthchecks garantem inicialização ordenada.
-- **Frontend: HTML/CSS/JS com Jinja2**: Templates dinâmicos para relatórios; CSS responsivo para usabilidade; JS para interatividade (modais, cópia).
-- **SMTP: Exim via aprendendolinux/exim-relay:latest**: Customizado para decodificação de logs, essencial para parsing preciso.
+```yaml
+version: '3.8'
 
-Cada tecnologia foi selecionada após avaliação de alternativas: por exemplo, PostgreSQL foi considerado mas MySQL escolhido por simplicidade; Celery para scheduling mas schedule preferido por leveza.
+services:
+  # Serviço de Banco de Dados MySQL
+  smtp-relay-db:
+    image: mysql:5.7
+    container_name: smtp-relay-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}          # Senha do usuário root do MySQL
+      MYSQL_DATABASE: ${DB_NAME}                   # Nome do banco de dados
+      MYSQL_USER: ${DB_USER}                       # Usuário do banco de dados
+      MYSQL_PASSWORD: ${DB_PASSWORD}               # Senha do usuário do banco de dados
+    volumes:
+      - smtp-relay-db-data:/var/lib/mysql          # Volume persistente para dados do MySQL
+    networks:
+      - smtp-relay-network                         # Rede para comunicação entre contêineres
 
-## História do Projeto
+  # Serviço de Backend (Flask)
+  smtp-relay-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile                       # Caminho para o Dockerfile que constrói a imagem do backend
+    container_name: smtp-relay-backend
+    environment:
+      DB_HOST: smtp-relay-db                      # Nome do serviço de banco de dados
+      DB_USER: ${DB_USER}                          # Usuário para acessar o banco de dados
+      DB_PASSWORD: ${DB_PASSWORD}                  # Senha para o banco de dados
+      DB_NAME: ${DB_NAME}                          # Nome do banco de dados
+      DB_PORT: ${DB_PORT}                          # Porta do banco de dados (default: 3306)
+      LOG_DIR: ${LOG_DIR}                          # Diretório onde os logs são armazenados
+      TZ: ${TZ}                                    # Fuso horário para a aplicação (exemplo: America/Sao_Paulo)
+      SCHEDULE_TYPE: ${SCHEDULE_TYPE}              # Tipo de agendamento: 'minutes' ou 'time'
+      SCHEDULE_INTERVAL_MINUTES: ${SCHEDULE_INTERVAL_MINUTES} # Intervalo de agendamento (em minutos)
+      SCHEDULE_TIME: ${SCHEDULE_TIME}              # Hora específica do agendamento (caso SCHEDULE_TYPE = 'time')
+      AUTH_MODE: ${AUTH_MODE}                      # Modo de autenticação: 'DB' ou 'AD'
+      LDAP_HOST: ${LDAP_HOST}                      # Host do servidor LDAP (necessário se AUTH_MODE=AD)
+      LDAP_DOMAIN: ${LDAP_DOMAIN}                  # Domínio LDAP (necessário se AUTH_MODE=AD)
+      LDAP_BASE_DN: ${LDAP_BASE_DN}                # Base DN do LDAP (necessário se AUTH_MODE=AD)
+      LDAP_GROUP_DN: ${LDAP_GROUP_DN}              # Grupo DN do LDAP (necessário se AUTH_MODE=AD)
+    depends_on:
+      - smtp-relay-db                              # O serviço de backend depende do banco de dados
+    ports:
+      - "5000:5000"                                # Exposição da porta 5000 para a aplicação Flask
+    networks:
+      - smtp-relay-network                         # Rede de comunicação entre contêineres
+    volumes:
+      - ./app:/app                                 # Volume para o código-fonte da aplicação
 
-O projeto começou em 2023 como um protótipo para monitorar envios de e-mails no Clube Naval, onde falhas frequentes demandavam análise manual. Versão 1.0 focava em parsing básico; v1.1 adicionou banco de dados; v2.0 integrou web interface e autenticação. Atualizações recentes (v3.0) incluíram agendamento, suporte a porta customizada e relatórios para impressão. Futuras versões planejam alertas via e-mail e integração com Grafana para dashboards.
+  # Serviço Exim (SMTP Relay)
+  smtp-relay-exim:
+    image: learnlinux/exim-relay:latest           # Imagem do servidor SMTP Exim
+    container_name: smtp-relay-exim
+    environment:
+      SMTP_PASSWORD: ${SMTP_PASSWORD}             # Senha do servidor SMTP
+    ports:
+      - "25:25"                                   # Exposição da porta 25 (SMTP)
+    networks:
+      - smtp-relay-network                         # Rede de comunicação entre contêineres
 
-Contribuições de desenvolvedores internos expandiram o escopo, com testes em ambientes de produção simulando 10.000 logs/dia.
+# Definição das redes de comunicação entre os contêineres
+networks:
+  smtp-relay-network:
+    driver: bridge                                 # Rede de tipo bridge (padrão do Docker)
 
-## Arquitetura do Sistema
-
-A arquitetura é microserviços-like via Docker:
-
-- **smtp-relay**: Servidor Exim gerando logs.
-- **smtp-relay-db**: MySQL armazenando dados processados.
-- **smtp-relay-frontend**: Flask processando logs e servindo web.
-
-Fluxo de Dados:
-1. Exim gera `mail.log` e `full_subjects.log`.
-2. Flask (via log_parser) lê logs, valida e insere no MySQL.
-3. Scheduler aciona processamento periodicamente.
-4. Rotas web consultam MySQL e renderizam templates.
-
-Diagrama ASCII simplificado:
-```
-[Exim Logs] --> [Parser/Scheduler] --> [MySQL DB]
-                                      ^
-                                      |
-[Web Interface] <--> [Flask Routes] --|
-```
-
-Esta arquitetura garante separação de preocupações, facilitando scaling (ex.: múltiplos frontends).
-
-## Pré-requisitos Detalhados
-
-- **Hardware**: Mínimo 2GB RAM, 1 CPU core; recomendado 4GB RAM para volumes altos.
-- **Software**:
-  - Docker v20+ e Compose v2+.
-  - Git para clonar repositório.
-  - Acesso a rede para pull de imagens.
-- **Ambiente**:
-  - Diretórios `/srv/smtp-relay/logs` e `/srv/smtp-relay/db` com permissões 755.
-  - Firewall liberando portas 25 (SMTP), 5000 (web), 3306 (DB interno).
-- **Conhecimentos**: Básico de Docker, Python e SQL para customizações.
-
-## Instalação e Configuração Passo a Passo
-
-1. **Clone o Repositório**:
-   ```bash
-   git clone https://github.com/clubenaval/relatorios-smtp.git
-   cd relatorios-smtp
-   ```
-
-2. **Crie .env para Sensíveis**:
-   ```plaintext
-   DB_PASSWORD=senha_forte_123
-   SMTP_PASSWORD=secret
-   SECRET_KEY=super_secret_key
-   ```
-
-3. **Edite docker-compose.yml**:
-   - Defina AUTH_MODE, SCHEDULE_TYPE, etc.
-   - Para DB_PORT != 3306, descomente e ajuste.
-
-4. **Inicie Serviços**:
-   ```bash
-   docker compose up -d --build
-   ```
-
-5. **Verifique Inicialização**:
-   ```bash
-   docker logs smtp-relay-frontend
-   ```
-   Procure "Banco de dados configurado" e "Scheduler iniciado".
-
-6. **Acesse Interface**: http://localhost:5000/login
-
-Para implantações em nuvem (ex.: AWS EC2):
-- Use volumes EBS para persistência.
-- Configure security groups para portas.
-- Integre com ELB para scaling.
-
-## Guia de Uso Avançado
-
-- **Geração de Logs de Teste**: Use swaks para simular envios.
-- **Customização de Templates**: Edite HTML em templates/ para branding.
-- **Extensão de Filtros**: Adicione parâmetros em app.py para buscas por IP/host.
-- **Monitoramento**: Integre com Prometheus para métricas de importação.
-
-Exemplos de Queries SQL Personalizadas:
-```sql
-SELECT COUNT(*) FROM email_logs WHERE status = 'rejected' AND log_date = CURDATE();
+# Volumes persistentes para dados do MySQL
+volumes:
+  smtp-relay-db-data:
+    driver: local                                   # Volume persistente para dados do banco de dados
 ```
 
-## Casos de Uso
+### **Explicação das Variáveis no `docker-compose.yml`**
 
-- **Auditoria Diária**: Filtre por data para revisar envios.
-- **Investigação de Falhas**: Busque por e-mail/assunto para rastrear rejeições.
-- **Relatórios Mensais**: Use print-report para exportar períodos longos.
-- **Integração Empresarial**: Com AD, restrinja a gerentes.
-- **Ambientes Educacionais**: Treinamento em SMTP com logs simulados.
+1. **`smtp-relay-db` (Banco de Dados MySQL)**:
 
-## Performance e Escalabilidade
+   * **image**: A imagem Docker utilizada para o banco de dados MySQL (versão 5.7).
+   * **container_name**: Nome do contêiner de banco de dados.
+   * **environment**:
 
-Testes mostram processamento de 10.000 logs em <5s. Para escalar:
-- Aumente SCHEDULE_INTERVAL para volumes altos.
-- Use MySQL clustering.
-- Otimize queries com índices adicionais.
+     * **MYSQL_ROOT_PASSWORD**: Senha do usuário root no MySQL, definida como uma variável de ambiente.
+     * **MYSQL_DATABASE**: Nome do banco de dados utilizado pela aplicação.
+     * **MYSQL_USER** e **MYSQL_PASSWORD**: Credenciais para o usuário de acesso ao banco de dados.
+   * **volumes**: Define o volume persistente para armazenar os dados do banco de dados MySQL, garantindo que os dados sejam mantidos entre reinicializações de contêineres.
+   * **networks**: O contêiner se conecta à rede interna definida no Docker Compose.
 
-Benchmarks:
-- 1.000 logs: 1s
-- 100.000 logs: 20s
+2. **`smtp-relay-backend` (Backend Flask)**:
 
-## Segurança Avançada
+   * **build**:
 
-- **Criptografia**: Senhas hashed; conexões DB seguras.
-- **Validações**: Entradas sanitizadas contra SQL injection.
-- **Auditoria**: Logs de acessos e importações.
-- **Melhores Práticas**: Rotação de chaves, atualizações regulares de imagens Docker.
+     * **context**: Diretório onde o Dockerfile está localizado, necessário para a construção da imagem Docker do backend.
+     * **dockerfile**: Nome do Dockerfile a ser utilizado.
+   * **container_name**: Nome do contêiner que executa a aplicação Flask.
+   * **environment**: Variáveis de ambiente que são passadas para o contêiner, configurando aspectos importantes da aplicação, como a conexão com o banco de dados, o agendamento e a autenticação. A maioria dessas variáveis será lida a partir do arquivo `.env` (não é mais necessário, pois tudo está configurado no próprio `docker-compose.yml`):
 
-## Desenvolvimento e Contribuições
+     * **DB_HOST**: Nome do serviço MySQL (conforme configurado no Docker Compose).
+     * **DB_USER, DB_PASSWORD, DB_NAME**: Credenciais de acesso ao banco de dados MySQL.
+     * **LOG_DIR**: Diretório onde os logs da aplicação serão armazenados.
+     * **TZ**: Fuso horário da aplicação.
+     * **SCHEDULE_TYPE**: Tipo de agendamento para a importação de logs (em minutos ou horário fixo).
+     * **SCHEDULE_INTERVAL_MINUTES**: Intervalo em minutos para o agendamento, se o tipo for `minutes`.
+     * **SCHEDULE_TIME**: Horário específico para o agendamento, se o tipo for `time`.
+     * **AUTH_MODE**: Modo de autenticação da aplicação (DB ou AD).
+   * **depends_on**: Define que o backend depende do serviço de banco de dados **smtp-relay-db**.
+   * **ports**: A aplicação Flask é exposta na porta 5000.
+   * **volumes**: O volume mapeado para o código da aplicação, permitindo que o código-fonte seja persistente entre reinicializações.
 
-- **Ambiente Dev**: Use venv; instale deps via pip.
-- **Testes**: Adicione unit tests com pytest para parser.
-- **CI/CD**: Integre GitHub Actions para builds.
+3. **`smtp-relay-exim` (Exim SMTP Relay)**:
 
-Roadmap:
-- v4.0: Alertas via e-mail para falhas.
-- v5.0: Dashboard com gráficos.
+   * **image**: A imagem Docker utilizada para emular um servidor Exim SMTP.
+   * **container_name**: Nome do contêiner Exim.
+   * **environment**: Definindo a senha do servidor SMTP, necessária para o funcionamento do Exim.
+   * **ports**: A porta 25 (SMTP) é exposta para comunicação com clientes externos.
 
-## FAQ
+---
 
-- **Por que Exim?** Otimizado para relay seguro.
-- **Logs não importam?** Verifique permissões e DECODE_SUBJECT.
-- **Customizar porta DB?** Sim, via DB_PORT.
+## **Execução da Aplicação**
 
-## Referências
+### **1. Baixar e Iniciar a Aplicação**
 
-- Flask Docs: https://flask.palletsprojects.com
-- Exim: https://www.exim.org
-- Docker: https://docs.docker.com
+Após configurar o `docker-compose.yml`, execute o seguinte comando para construir e iniciar a aplicação:
 
-## Licença
+```bash
+docker-compose up -d --build
+```
 
-MIT License. Copyright (c) 2023 Henrique Fagundes.
+Isso irá criar os contêineres para a aplicação Flask, o banco de dados MySQL e o servidor Exim, e inicializar os serviços automaticamente.
 
-## Contato e Suporte
+### **2. Acessar a Aplicação**
 
-E-mail: support@henrique.tec.br
-Site: https://www.henrique.tec.br
+A aplicação estará disponível em **[http://localhost:5000](http://localhost:5000)**. Utilize o navegador para acessar a interface de login.
+
+---
+
+## **Contribuição**
+
+Contribuições são bem-vindas! Para contribuir:
+
+1. **Faça um fork** deste repositório.
+2. **Crie uma branch** para sua feature: `git checkout -b feature/nova-feature`.
+3. **Faça o commit** das suas alterações: `git commit -m 'Adicionando nova feature'`.
+4. **Envie um push** para sua branch: `git push origin feature/nova-feature`.
+5. **Abra um pull request**.
+
+---
+
+## **Licença**
+
+Este projeto é licenciado sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## **Suporte**
+
+Para suporte, entre em contato com **Henrique Fagundes** ou envie um e-mail para **[support@henrique.tec.br](mailto:support@henrique.tec.br)**.
