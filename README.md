@@ -1,6 +1,6 @@
 # **Relatórios SMTP - Clube Naval**
 
-![Logo Clube Naval](shttps://www.clubenaval.org.br/themes/custom/cn_theme/cn_logo_n1.svg)
+![Logo Clube Naval](https://www.clubenaval.org.br/themes/custom/cn_theme/cn_logo_n1.svg)
 
 [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-blue.svg)](https://github.com/seu-usuario/relatorios-smtp/releases)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
