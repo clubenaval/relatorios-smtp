@@ -386,7 +386,7 @@ def index():
             query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
 
         # Adiciona paginação
-        items_per_page = 500
+        items_per_page = 50
         offset = (page - 1) * items_per_page
         query += f" LIMIT {items_per_page} OFFSET {offset}"
         cur.execute(query, params)
@@ -586,19 +586,23 @@ def export_csv():
         # Gerar CSV
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['Message ID', 'Data', 'Hora', 'De', 'Para', 'Status', 'Host Origem', 'IP Origem', 'Assunto'])
+        writer.writerow(['ID', 'Data', 'Hora', 'De', 'Para', 'Host Origem', 'IP Origem', 'Assunto', 'Status'])
 
         for log in logs:
+            # Converter status 'sent' para 'Enviado'
+            status = 'Enviado' if log['status'] == 'sent' else log['status']
+            # Converter formato da data de YYYY-MM-DD para DD/MM/YYYY
+            log_date = datetime.strptime(str(log['log_date']), '%Y-%m-%d').strftime('%d/%m/%Y')
             writer.writerow([
-                log['message_id'],
-                log['log_date'],
+                log['id'],  # Usar 'id' em vez de 'message_id'
+                log_date,
                 log['log_time'],
                 log['from_email'],
                 log['to_email'],
-                log['status'],
                 log['origin_host'],
                 log['origin_ip'],
-                log['subject']
+                log['subject'],
+                status
             ])
 
         response = app.response_class(
