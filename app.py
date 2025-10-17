@@ -147,6 +147,7 @@ def index():
     search_email = request.args.get('search_email', '').strip()
     search_subject = request.args.get('search_subject', '').strip()
     status_filter = request.args.get('status_filter')
+    auto_refresh = request.args.get('auto_refresh')
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
     page = request.args.get('page', 1, type=int)
@@ -230,8 +231,8 @@ def index():
         logs = cur.fetchall()
         return render_template('report.html', logs=logs, start_date=start_date, end_date=end_date, start_time=start_time, end_time=end_time,
                                search_email=search_email, search_subject=search_subject, status_filter=status_filter, 
-                               sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, use_time_filter=use_time_filter, 
-                               auth_mode=AUTH_MODE, page=page, total_pages=total_pages, use_pagination=True)
+                               auto_refresh=auto_refresh, sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, 
+                               use_time_filter=use_time_filter, auth_mode=AUTH_MODE, page=page, total_pages=total_pages, use_pagination=True)
 
     except Exception as e:
         flash(f'Erro ao consultar o banco de dados: {e}')

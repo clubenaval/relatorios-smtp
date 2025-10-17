@@ -407,9 +407,15 @@
                 style="width: 100%; padding: 4px;"></td>
             </tr>
             <tr>
+                <td style="padding: 4px 6px; text-align: right;"><label for="auto_refresh">Atualização Automática:</label></td>
+                <td style="padding: 4px;"><input type="checkbox" id="auto_refresh" name="auto_refresh" {% if auto_refresh %} checked {% endif %}></td>
                 <td style="padding: 4px 6px; text-align: right;"><label>Apenas falhados</label></td>
                 <td style="padding: 4px;"><input type="checkbox" name="status_filter" value="failed"
                 {% if status_filter == 'failed' %} checked {% endif %}></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
                 <td></td>
                 <td style="padding: 4px; text-align: right;">
                 <button type="submit" style="padding: 5px 10px;">Filtrar</button>
@@ -445,7 +451,7 @@
                     <td class="from-col clickable" data-ip="{{ log.origin_ip }}" data-host="{{ log.origin_host }}" data-from="{{ log.from_email }}">{{ log.from_email }}</td>
                     <td class="to-col clickable">{{ log.to_email }}</td>
                     <td class="subject-col clickable">{{ log.subject }}</td>
-                    <td>{{ log.status }}</td>
+                    <td {% if log.status == 'sent' %}style="color: #28A745;"{% endif %}>{{ 'Enviado' if log.status == 'sent' else log.status }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -601,6 +607,36 @@
         // Abre a URL para download
         window.location.href = exportUrl;
     }
+
+    // Função para atualização automática
+    const autoRefreshCheckbox = document.getElementById('auto_refresh');
+    let refreshInterval = null;
+
+    function toggleAutoRefresh() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (autoRefreshCheckbox.checked) {
+            urlParams.set('auto_refresh', 'true');
+            refreshInterval = setInterval(() => {
+                window.location.href = '?' + urlParams.toString();
+            }, 60000); // 1 minuto em milissegundos
+        } else {
+            urlParams.delete('auto_refresh');
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            // Atualiza a URL sem recarregar para remover o parâmetro auto_refresh
+            window.history.replaceState(null, '', '?' + urlParams.toString());
+        }
+    }
+
+    // Inicializa a atualização automática se a checkbox estiver marcada
+    if (autoRefreshCheckbox.checked) {
+        toggleAutoRefresh();
+    }
+
+    // Adiciona o evento de mudança na checkbox
+    autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
 </script>
 </body>
 </html>
