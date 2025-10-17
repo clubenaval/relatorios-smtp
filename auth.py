@@ -24,13 +24,15 @@ def authenticate_db(username, password, db_host, db_user, db_password, db_name, 
     try:
         conn = get_conn(db_host, db_user, db_password, db_name, db_port)
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT id, username, password_hash FROM app_users WHERE username=%s", (username,))
+        cur.execute("SELECT id, username, password_hash, is_admin FROM app_users WHERE username=%s", (username,))
         user = cur.fetchone()
         if not user:
-            return False
-        return check_password_hash(user['password_hash'], password)
+            return None
+        if check_password_hash(user['password_hash'], password):
+            return user  # Retorna o dict completo do usuário, incluindo is_admin
+        return None
     except Error:
-        return False
+        return None
     finally:
         try:
             cur.close()

@@ -61,12 +61,26 @@ def setup_database(auth_mode, db_host, db_user, db_password, db_name, db_port=33
             CREATE TABLE IF NOT EXISTS app_users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(100) NOT NULL UNIQUE,
+                email VARCHAR(255),
                 password_hash VARCHAR(255) NOT NULL,
-                is_default_admin TINYINT(1) NOT NULL DEFAULT 0,
+                is_admin TINYINT(1) NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """)
         conn.commit()
+
+        # Migração para adicionar email e renomear is_default_admin para is_admin, se necessário
+        try:
+            cur.execute("SHOW COLUMNS FROM app_users LIKE 'email'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE app_users ADD COLUMN email VARCHAR(255)")
+                conn.commit()
+            cur.execute("SHOW COLUMNS FROM app_users LIKE 'is_default_admin'")
+            if cur.fetchone():
+                cur.execute("ALTER TABLE app_users CHANGE is_default_admin is_admin TINYINT(1) NOT NULL DEFAULT 0")
+                conn.commit()
+        except Error as e:
+            logging.info(f"Ajuste de esquema em app_users ok/ignorado: {e}")
 
         if auth_mode == 'DB':
             cur.execute("SELECT id FROM app_users WHERE username=%s", ('admin',))
@@ -74,11 +88,11 @@ def setup_database(auth_mode, db_host, db_user, db_password, db_name, db_port=33
             if not row:
                 pwd_hash = generate_password_hash('admin')
                 cur.execute(
-                    "INSERT INTO app_users (username, password_hash, is_default_admin) VALUES (%s,%s,1)",
-                    ('admin', pwd_hash)
+                    "INSERT INTO app_users (username, email, password_hash, is_admin) VALUES (%s, %s, %s, 1)",
+                    ('admin', 'admin@example.com', pwd_hash)
                 )
                 conn.commit()
-                logging.info("Usuário padrão 'admin' criado com senha 'admin'.")
+                logging.info("Usuário padrão 'admin' criado com senha 'admin' e privilégios de admin.")
 
         cur.close()
         conn.close()

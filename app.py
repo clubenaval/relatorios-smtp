@@ -11,6 +11,7 @@ import pytz
 import threading
 import csv
 import io
+from werkzeug.security import generate_password_hash, check_password_hash
 
 logging.basicConfig(level=logging.INFO)
 
@@ -55,24 +56,34 @@ def login():
     if request.method == 'POST':
         username = request.form['username'].strip()
         password = request.form['password']
-        if authenticate(username, password, AUTH_MODE, 
+        auth_result = authenticate(username, password, AUTH_MODE, 
                         ldap_host=LDAP_HOST if AUTH_MODE == 'AD' else None,
                         ldap_domain=LDAP_DOMAIN if AUTH_MODE == 'AD' else None,
                         ldap_base_dn=LDAP_BASE_DN if AUTH_MODE == 'AD' else None,
                         ldap_group_dn=LDAP_GROUP_DN if AUTH_MODE == 'AD' else None,
-                        db_host=DB_HOST, db_user=DB_USER, db_password=DB_PASSWORD, db_name=DB_NAME, db_port=DB_PORT):
-            session['logged_in'] = True
-            session['username'] = username
-            flash('Login bem-sucedido!')
-            return redirect(url_for('index'))
+                        db_host=DB_HOST, db_user=DB_USER, db_password=DB_PASSWORD, db_name=DB_NAME, db_port=DB_PORT)
+        if AUTH_MODE == 'AD':
+            if auth_result:
+                session['logged_in'] = True
+                session['username'] = username
+                session['is_admin'] = False  # No modo AD, assumimos que não há admins DB; ajuste se necessário
+                session.pop('_flashes', None)  # Limpa mensagens flash após login
+                return redirect(url_for('index'))
         else:
-            flash('Usuário ou senha inválidos, ou sem permissão.')
+            if auth_result:
+                session['logged_in'] = True
+                session['username'] = username
+                session['is_admin'] = bool(auth_result['is_admin'])
+                session.pop('_flashes', None)  # Limpa mensagens flash após login
+                return redirect(url_for('index'))
+        flash('Usuário ou senha inválidos, ou sem permissão.')
     return render_template('login.html', auth_mode=AUTH_MODE)
 
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
+    session.pop('is_admin', None)
     session.pop('_flashes', None)
     flash('Logout realizado.')
     return redirect(url_for('login'))
@@ -98,7 +109,6 @@ def change_password():
 
         username = session.get('username')
         try:
-            from werkzeug.security import generate_password_hash, check_password_hash
             conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
             cur = conn.cursor(dictionary=True)
             cur.execute("SELECT id, password_hash FROM app_users WHERE username=%s", (username,))
@@ -107,7 +117,7 @@ def change_password():
                 flash('Senha atual incorreta.')
                 return redirect(url_for('change_password'))
             new_hash = generate_password_hash(new_pwd)
-            cur.execute("UPDATE app_users SET password_hash=%s, is_default_admin=0 WHERE id=%s", (new_hash, user['id']))
+            cur.execute("UPDATE app_users SET password_hash=%s WHERE id=%s", (new_hash, user['id']))
             conn.commit()
             flash('Senha alterada com sucesso.')
             return redirect(url_for('index'))
@@ -123,6 +133,167 @@ def change_password():
 
     return render_template('change_password.html')
 
+@app.route('/manage', methods=['GET'])
+@login_required
+def manage():
+    if AUTH_MODE != 'DB' or not session.get('is_admin'):
+        flash('Acesso negado. Somente administradores podem gerenciar usuários.')
+        return redirect(url_for('index'))
+    try:
+        conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, username, email, is_admin FROM app_users")
+        users = cur.fetchall()
+        return render_template('manage.html', users=users, current_username=session.get('username'))
+    except Exception as e:
+        flash(f'Erro ao listar usuários: {e}')
+        return redirect(url_for('index'))
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except:
+            pass
+
+@app.route('/create-user', methods=['GET', 'POST'])
+@login_required
+def create_user():
+    if AUTH_MODE != 'DB' or not session.get('is_admin'):
+        flash('Acesso negado. Somente administradores podem criar usuários.')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        is_admin = 1 if request.form.get('is_admin') else 0
+
+        if not username or not password or len(password) < 4:
+            flash('Usuário e senha (mínimo 4 caracteres) são obrigatórios.')
+            return redirect(url_for('create_user'))
+        if password != confirm_password:
+            flash('Confirmação de senha não confere.')
+            return redirect(url_for('create_user'))
+
+        try:
+            conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+            cur = conn.cursor()
+            pwd_hash = generate_password_hash(password)
+            cur.execute(
+                "INSERT INTO app_users (username, email, password_hash, is_admin) VALUES (%s, %s, %s, %s)",
+                (username, email, pwd_hash, is_admin)
+            )
+            conn.commit()
+            flash('Usuário criado com sucesso.')
+            return redirect(url_for('manage'))
+        except Exception as e:
+            flash(f'Erro ao criar usuário: {e}')
+            return redirect(url_for('create_user'))
+        finally:
+            try:
+                cur.close()
+                conn.close()
+            except:
+                pass
+
+    return render_template('create_user.html')
+
+@app.route('/edit-user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(user_id):
+    if AUTH_MODE != 'DB' or not session.get('is_admin'):
+        flash('Acesso negado. Somente administradores podem editar usuários.')
+        return redirect(url_for('index'))
+
+    try:
+        conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, username, email, is_admin FROM app_users WHERE id=%s", (user_id,))
+        user = cur.fetchone()
+        if not user:
+            flash('Usuário não encontrado.')
+            return redirect(url_for('manage'))
+
+        if request.method == 'POST':
+            email = request.form.get('email', '').strip()
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            is_admin = 1 if request.form.get('is_admin') else 0
+
+            updates = []
+            params = []
+            if email != user['email']:
+                updates.append("email = %s")
+                params.append(email)
+            if new_password:
+                if len(new_password) < 4:
+                    flash('Nova senha deve ter pelo menos 4 caracteres.')
+                    return render_template('edit_user.html', user=user)
+                if new_password != confirm_password:
+                    flash('Confirmação de senha não confere.')
+                    return render_template('edit_user.html', user=user)
+                pwd_hash = generate_password_hash(new_password)
+                updates.append("password_hash = %s")
+                params.append(pwd_hash)
+            if is_admin != user['is_admin']:
+                updates.append("is_admin = %s")
+                params.append(is_admin)
+
+            if updates:
+                query = "UPDATE app_users SET " + ", ".join(updates) + " WHERE id = %s"
+                params.append(user_id)
+                cur.execute(query, params)
+                conn.commit()
+                flash('Usuário atualizado com sucesso.')
+            else:
+                flash('Nenhuma alteração realizada.')
+            return redirect(url_for('manage'))
+
+        return render_template('edit_user.html', user=user)
+    except Exception as e:
+        flash(f'Erro ao editar usuário: {e}')
+        return redirect(url_for('manage'))
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except:
+            pass
+
+@app.route('/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if AUTH_MODE != 'DB' or not session.get('is_admin'):
+        flash('Acesso negado. Somente administradores podem excluir usuários.')
+        return redirect(url_for('index'))
+
+    try:
+        conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, username FROM app_users WHERE id=%s", (user_id,))
+        user = cur.fetchone()
+        if not user:
+            flash('Usuário não encontrado.')
+            return redirect(url_for('manage'))
+        if user['username'] == session.get('username'):
+            flash('Você não pode excluir seu próprio usuário.')
+            return redirect(url_for('manage'))
+
+        cur.execute("DELETE FROM app_users WHERE id=%s", (user_id,))
+        conn.commit()
+        flash(f'Usuário {user["username"]} excluído com sucesso.')
+        return redirect(url_for('manage'))
+    except Exception as e:
+        flash(f'Erro ao excluir usuário: {e}')
+        return redirect(url_for('manage'))
+    finally:
+        try:
+            cur.close()
+            conn.close()
+        except:
+            pass
+
 @app.route('/import-emails', methods=['GET'])
 @login_required
 def import_emails():
@@ -137,7 +308,7 @@ def import_emails():
         flash(f'Erro ao executar importação: {e}')
     return redirect(url_for('index'))
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
     start_date = request.args.get('start_date')
@@ -147,17 +318,17 @@ def index():
     search_email = request.args.get('search_email', '').strip()
     search_subject = request.args.get('search_subject', '').strip()
     status_filter = request.args.get('status_filter')
-    auto_refresh = request.args.get('auto_refresh')
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
-    page = request.args.get('page', 1, type=int)
+    auto_refresh = 'auto_refresh' in request.args
+    page = request.args.get('page', 1, type=int)  # Adiciona suporte a paginação
 
     today = datetime.now(pytz.timezone(TZ)).date().isoformat()
 
     use_date_filter = bool(start_date or end_date)
     if use_date_filter:
         if start_date and end_date and start_date > end_date:
-            logging.warning("Data inicial maior que final; ignorando filtro de data.")
+            logging.warning("Data inicial maior que final; ignorando filtro.")
             use_date_filter = False
             start_date = None
             end_date = None
@@ -188,8 +359,7 @@ def index():
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
 
-        # Contar total de registros para paginação
-        count_query = "SELECT COUNT(*) AS total FROM email_logs"
+        query = "SELECT * FROM email_logs"
         params = []
         where = []
         if use_date_filter:
@@ -207,15 +377,6 @@ def index():
         if status_filter == 'failed':
             where.append("status != 'sent'")
         if where:
-            count_query += " WHERE " + " AND ".join(where)
-
-        cur.execute(count_query, params)
-        total_records = cur.fetchone()['total']
-        total_pages = (total_records + 49) // 50  # Arredonda para cima
-
-        # Consulta principal com LIMIT e OFFSET
-        query = "SELECT * FROM email_logs"
-        if where:
             query += " WHERE " + " AND ".join(where)
 
         order_direction = "ASC" if sort_order == 'asc' else "DESC"
@@ -224,19 +385,30 @@ def index():
         else:
             query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
 
-        query += " LIMIT 50 OFFSET %s"
-        params.append((page - 1) * 50)
-
+        # Adiciona paginação
+        items_per_page = 500
+        offset = (page - 1) * items_per_page
+        query += f" LIMIT {items_per_page} OFFSET {offset}"
         cur.execute(query, params)
         logs = cur.fetchall()
-        return render_template('report.html', logs=logs, start_date=start_date, end_date=end_date, start_time=start_time, end_time=end_time,
-                               search_email=search_email, search_subject=search_subject, status_filter=status_filter, 
-                               auto_refresh=auto_refresh, sort_by=sort_by, sort_order=sort_order, use_date_filter=use_date_filter, 
-                               use_time_filter=use_time_filter, auth_mode=AUTH_MODE, page=page, total_pages=total_pages, use_pagination=True)
 
+        results_count = len(logs)
+        # Conta o total de registros para paginação
+        count_query = "SELECT COUNT(*) FROM email_logs" + (" WHERE " + " AND ".join(where) if where else "")
+        cur.execute(count_query, params)
+        total_count = cur.fetchone()['COUNT(*)']
+        total_pages = (total_count + items_per_page - 1) // items_per_page
+
+        return render_template(
+            'report.html', logs=logs, auth_mode=AUTH_MODE,
+            start_date=start_date, end_date=end_date, start_time=start_time, end_time=end_time,
+            search_email=search_email, search_subject=search_subject, status_filter=status_filter,
+            sort_by=sort_by, sort_order=sort_order, auto_refresh=auto_refresh,
+            results_count=results_count, total_count=total_count,
+            page=page, total_pages=total_pages
+        )
     except Exception as e:
-        flash(f'Erro ao consultar o banco de dados: {e}')
-        return redirect(url_for('index'))
+        return f"Erro ao consultar o banco de dados: {e}"
     finally:
         try:
             cur.close()
@@ -262,7 +434,7 @@ def print_report():
     use_date_filter = bool(start_date or end_date)
     if use_date_filter:
         if start_date and end_date and start_date > end_date:
-            logging.warning("Data inicial maior que final; ignorando filtro de data.")
+            logging.warning("Data inicial maior que final; ignorando filtro.")
             use_date_filter = False
             start_date = None
             end_date = None
