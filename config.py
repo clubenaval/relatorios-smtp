@@ -86,18 +86,15 @@ def validate_environment_variables():
 
     if auth_mode == 'DB':
         smtp_port = os.environ.get('SMTP_PORT')
-        try:
-            smtp_port_int = int(smtp_port)
-            if not (1 <= smtp_port_int <= 65535):
-                missing.append(f"Porta SMTP inválida: {smtp_port}")
-        except ValueError:
-            missing.append(f"Porta SMTP deve ser um inteiro: {smtp_port}")
-
-        if os.environ.get('SMTP_AUTHENTICATED', 'True') == 'True':
-            for bool_var in ['SMTP_USE_TLS', 'SMTP_USE_SSL']:
-                val = os.environ.get(bool_var)
-                if val not in ['True', 'False']:
-                    missing.append(f"{bool_var} deve ser 'True' ou 'False'")
+        if not smtp_port or smtp_port.strip() == '':
+            missing.append("Porta SMTP (SMTP_PORT) não definida ou vazia")
+        else:
+            try:
+                smtp_port_int = int(smtp_port)
+                if not (1 <= smtp_port_int <= 65535):
+                    missing.append(f"Porta SMTP inválida: {smtp_port} (deve ser entre 1 e 65535)")
+            except ValueError:
+                missing.append(f"Porta SMTP deve ser um inteiro: {smtp_port}")
 
     if missing:
         for m in missing:
