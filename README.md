@@ -1,6 +1,6 @@
 # **Relatórios SMTP - Clube Naval**
 
-![Logo Clube Naval](static/logo.png) <!-- Assumindo que há um logo no repositório; ajuste o caminho se necessário. Para uma representação visual mais detalhada, considere adicionar um diagrama de arquitetura abaixo. -->
+![Logo Clube Naval](shttps://www.clubenaval.org.br/themes/custom/cn_theme/cn_logo_n1.svg)
 
 [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-blue.svg)](https://github.com/seu-usuario/relatorios-smtp/releases)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
@@ -68,22 +68,6 @@ Justificativa: Escolhas focadas em leveza (baixo overhead), segurança (bibliote
 
 A arquitetura segue princípios de microservices containerizados, com separação de preocupações para manutenção e escalabilidade. Diagrama em Mermaid (copie para visualizadores online como mermaid.live):
 
-```mermaid
-graph TD
-    A[SMTP Clients] --> B[Exim Relay - smtp-relay]
-    B --> C[External SMTP Servers]
-    B --> D[Shared Logs Volume]
-    E[Flask App - smtp-relay-app] --> D
-    E --> F[MySQL DB - smtp-relay-db]
-    G[LDAP Server (AD Mode)] --> E
-    H[Web Browser] --> E
-    subgraph Docker Network
-        B
-        D
-        E
-        F
-    end
-```
 
 - **Fluxo Detalhado**:
   1. E-mails de clients (apps/scripts) chegam ao Exim Relay via porta 25/2525.
