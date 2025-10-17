@@ -99,6 +99,9 @@
             <input type="password" name="password" placeholder="Senha" required>
             <button type="submit">Entrar</button>
         </form>
+        {% if auth_mode == 'DB' %}
+        <a href="{{ url_for('forgot_password') }}" style="display: block; margin-top: 10px; color: var(--primary-red);">Recuperar senha</a>
+        {% endif %}
     </div>
     <footer><a href="https://www.henrique.tec.br" target="_blank" style="color: inherit; text-decoration: none;">
   Desenvolvido por Henrique Fagundes - Todos os direitos reservados

@@ -25,8 +25,22 @@ def validate_environment_variables():
         'LDAP_GROUP_DN': 'Grupo DN do LDAP',
     } if auth_mode == 'AD' else {}
 
+    required_smtp = {
+        'SMTP_SERVER': 'Servidor SMTP',
+        'SMTP_PORT': 'Porta SMTP',
+        'SMTP_FROM': 'E-mail de origem SMTP',
+        'SMTP_FROM_NAME': 'Nome do remetente SMTP',
+    } if auth_mode == 'DB' else {}
+
+    required_smtp_authenticated = {
+        'SMTP_USERNAME': 'Usuário SMTP',
+        'SMTP_PASSWORD': 'Senha SMTP',
+        'SMTP_USE_TLS': 'Usar TLS para SMTP (True/False)',
+        'SMTP_USE_SSL': 'Usar SSL para SMTP (True/False)',
+    } if auth_mode == 'DB' and os.environ.get('SMTP_AUTHENTICATED', 'True') == 'True' else {}
+
     missing = []
-    all_required = {**required_common, **required_ldap}
+    all_required = {**required_common, **required_ldap, **required_smtp, **required_smtp_authenticated}
     for var, desc in all_required.items():
         v = os.environ.get(var)
         if not v or v.strip() == '':
@@ -70,6 +84,21 @@ def validate_environment_variables():
     except ValueError:
         missing.append(f"Porta do banco de dados (DB_PORT) deve ser um inteiro: {db_port}")
 
+    if auth_mode == 'DB':
+        smtp_port = os.environ.get('SMTP_PORT')
+        try:
+            smtp_port_int = int(smtp_port)
+            if not (1 <= smtp_port_int <= 65535):
+                missing.append(f"Porta SMTP inválida: {smtp_port}")
+        except ValueError:
+            missing.append(f"Porta SMTP deve ser um inteiro: {smtp_port}")
+
+        if os.environ.get('SMTP_AUTHENTICATED', 'True') == 'True':
+            for bool_var in ['SMTP_USE_TLS', 'SMTP_USE_SSL']:
+                val = os.environ.get(bool_var)
+                if val not in ['True', 'False']:
+                    missing.append(f"{bool_var} deve ser 'True' ou 'False'")
+
     if missing:
         for m in missing:
             logging.error(m)
@@ -93,6 +122,21 @@ def validate_environment_variables():
             'LDAP_BASE_DN': os.environ['LDAP_BASE_DN'],
             'LDAP_GROUP_DN': os.environ['LDAP_GROUP_DN'],
         })
+    if auth_mode == 'DB':
+        env.update({
+            'SMTP_SERVER': os.environ['SMTP_SERVER'],
+            'SMTP_PORT': int(os.environ['SMTP_PORT']),
+            'SMTP_FROM': os.environ['SMTP_FROM'],
+            'SMTP_FROM_NAME': os.environ['SMTP_FROM_NAME'],
+            'SMTP_AUTHENTICATED': os.environ.get('SMTP_AUTHENTICATED', 'True') == 'True',
+        })
+        if env['SMTP_AUTHENTICATED']:
+            env.update({
+                'SMTP_USERNAME': os.environ['SMTP_USERNAME'],
+                'SMTP_PASSWORD': os.environ['SMTP_PASSWORD'],
+                'SMTP_USE_TLS': os.environ['SMTP_USE_TLS'] == 'True',
+                'SMTP_USE_SSL': os.environ['SMTP_USE_SSL'] == 'True',
+            })
     if env['SCHEDULE_TYPE'] == 'minutes':
         env['SCHEDULE_INTERVAL_MINUTES'] = int(os.environ['SCHEDULE_INTERVAL_MINUTES'])
     else:

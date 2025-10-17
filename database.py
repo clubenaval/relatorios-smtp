@@ -64,7 +64,9 @@ def setup_database(auth_mode, db_host, db_user, db_password, db_name, db_port=33
                 email VARCHAR(255),
                 password_hash VARCHAR(255) NOT NULL,
                 is_admin TINYINT(1) NOT NULL DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reset_token VARCHAR(255),
+                reset_expires DATETIME
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """)
         conn.commit()
@@ -78,6 +80,14 @@ def setup_database(auth_mode, db_host, db_user, db_password, db_name, db_port=33
             cur.execute("SHOW COLUMNS FROM app_users LIKE 'is_default_admin'")
             if cur.fetchone():
                 cur.execute("ALTER TABLE app_users CHANGE is_default_admin is_admin TINYINT(1) NOT NULL DEFAULT 0")
+                conn.commit()
+            cur.execute("SHOW COLUMNS FROM app_users LIKE 'reset_token'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE app_users ADD COLUMN reset_token VARCHAR(255)")
+                conn.commit()
+            cur.execute("SHOW COLUMNS FROM app_users LIKE 'reset_expires'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE app_users ADD COLUMN reset_expires DATETIME")
                 conn.commit()
         except Error as e:
             logging.info(f"Ajuste de esquema em app_users ok/ignorado: {e}")
