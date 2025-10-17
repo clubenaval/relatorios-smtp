@@ -69,6 +69,9 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
+    depends_on:
+      smtp-relay:
+        condition: service_started
 
   smtp-relay-frontend:
     image: clubenaval/relatorios-smtp:latest
@@ -132,7 +135,7 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      banco:
+      smtp-relay-db:
         condition: service_healthy
 
 networks:
