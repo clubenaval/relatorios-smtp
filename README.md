@@ -1,6 +1,6 @@
 # **Relatórios SMTP - Clube Naval**
 
-<img src="static/logo.png" alt="Logo Clube Naval" width="200" />
+<center><img src="static/logo.png" alt="Logo Clube Naval" width="200" /></center>
 
 [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-blue.svg)](https://github.com/seu-usuario/relatorios-smtp/releases)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
