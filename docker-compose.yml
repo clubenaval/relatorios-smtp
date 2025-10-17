@@ -1,9 +1,8 @@
 # docker-compose.yml
 #
-# Este arquivo define a composição de serviços Docker para um sistema de monitoramento e relatório de e-mails SMTP.
-# Inclui três serviços: smtp-relay (relay SMTP), banco (MySQL) e app (Flask para relatórios).
-# O foco aqui é documentar as variáveis de ambiente de cada serviço, explicando seu uso.
-# Dados sensíveis foram substituídos por valores fictícios para segurança.
+# Define serviços Docker para monitoramento e relatório de e-mails SMTP.
+# Inclui smtp-relay (Exim), smtp-relay-db (MySQL) e app (Flask).
+# Comentários resumem opções das variáveis.
 
 services:
   smtp-relay:
@@ -12,38 +11,32 @@ services:
     container_name: smtp-relay
     hostname: smtp-relay
     environment:
-      # SMTP_SERVER: Endereço do servidor SMTP externo para relay (ex.: Gmail, AWS SES).
-      # Uso: Configure com o hostname do provedor (ex.: smtp-relay.gmail.com para Gmail).
+      # SMTP_SERVER: Hostname do servidor SMTP (ex.: smtp-relay.gmail.com, email-smtp.us-west-2.amazonaws.com).
       - SMTP_SERVER=smtp-relay.example.com
-      # SMTP_PORT: Porta do servidor SMTP externo (587 para STARTTLS, 465 para SSL).
-      # Uso: Verifique a porta recomendada pelo provedor; 587 é comum para Gmail.
+      # SMTP_PORT: Porta SMTP (25 não seguro, 587 STARTTLS, 465 SSL).
       - SMTP_PORT=587
-      # SMTP_USERNAME: Usuário para autenticação no servidor SMTP.
-      # Uso: Use o e-mail ou ID do usuário (ex.: user@example.com). Gere um app password para Gmail com 2FA.
+      # SMTP_USERNAME: Usuário SMTP (ex.: user@example.com, api_key).
       - SMTP_USERNAME=user@example.com
-      # SMTP_PASSWORD: Senha ou app password para autenticação SMTP.
-      # Uso: Insira a senha ou app password (para Gmail, gere em https://myaccount.google.com/security).
-      # Cuidado: Não exponha em repositórios públicos; use .env para segurança.
+      # SMTP_PASSWORD: Senha SMTP (ex.: xxxxxxxxxxxxxxxx).
       - SMTP_PASSWORD=xxxxxxxxxxxxxxxx
-      # SERVER_HOSTNAME: Fully Qualified Domain Name (FQDN) do servidor Exim.
-      # Uso: Define o nome do host usado em HELO/EHLO e qualificação de e-mails (ex.: mail.example.com).
+      # SERVER_HOSTNAME: FQDN do Exim (ex.: mail.example.com).
       - SERVER_HOSTNAME=mail.example.com
-      # RELAY_NETS: Redes permitidas para enviar e-mails via relay.
-      # Uso: Especifique IPs ou CIDRs (ex.: 192.168.1.0/24). Use 0.0.0.0/0 para qualquer origem (inseguro em produção).
+      # RELAY_NETS: Redes permitidas (ex.: 0.0.0.0/0, 192.168.1.0/24).
       - RELAY_NETS=0.0.0.0/0
-      # TZ: Fuso horário para timestamps nos logs do Exim.
-      # Uso: Configure com um fuso válido (ex.: America/Sao_Paulo, UTC). Veja lista em /usr/share/zoneinfo.
+      # TZ: Fuso horário (ex.: America/Sao_Paulo, UTC).
       - TZ=America/Sao_Paulo
-      # DECODE_SUBJECT: Ativa decodificação de assuntos MIME/octais nos logs.
-      # Uso: Defina como 'yes' para gerar mail.log legível com assuntos decodificados; 'no' para desativar.
+      # DECODE_SUBJECT: Decodifica assuntos MIME (yes, no).
       - DECODE_SUBJECT=yes
-      # DECODE_DEBUG: Ativa logs de depuração para o script de decodificação.
-      # Uso: Defina como 'yes' para logs detalhados em decode_errors.log (útil para troubleshooting); 'no' para desativar.
-      - DECODE_DEBUG=yes
     volumes:
       - /srv/smtp-relay/logs:/var/log/exim4
     ports:
       - 25:25
+      - 2525:25
+    healthcheck:
+      test: ["CMD-SHELL", "exim -bhc 127.0.0.1 -oX 25 <<< 'QUIT'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   smtp-relay-db:
     image: mysql:5.7.44
@@ -51,86 +44,78 @@ services:
     container_name: smtp-relay-db
     hostname: smtp-relay-db
     environment:
-      # MYSQL_ROOT_PASSWORD: Senha do usuário root do MySQL.
-      # Uso: Defina uma senha forte para o root. Use .env para não expor (ex.: ${MYSQL_ROOT_PASS}).
-      - MYSQL_ROOT_PASSWORD=senha_forte_123
-      # MYSQL_DATABASE: Nome do banco de dados criado automaticamente na inicialização.
-      # Uso: Defina o nome do banco que a app usará (ex.: smtp_cpd).
-      - MYSQL_DATABASE=smtp_cpd
-      # MYSQL_USER: Nome do usuário adicional criado no MySQL.
-      # Uso: Crie um usuário com privilégios no banco especificado (ex.: 'app_user').
-      - MYSQL_USER=app_user
-      # MYSQL_PASSWORD: Senha do usuário adicional (MYSQL_USER).
-      # Uso: Defina uma senha forte para o usuário. Use .env para segurança.
-      - MYSQL_PASSWORD=senha_forte_456
+      # MYSQL_ROOT_PASSWORD: Senha root (ex.: senha_complexa).
+      MYSQL_ROOT_PASSWORD: 'xxxxxxxxxxxxxxxx'
+      # MYSQL_DATABASE: Nome do banco (ex.: smtp_cpd).
+      MYSQL_DATABASE: smtp_cpd
+      # MYSQL_USER: Usuário MySQL (ex.: smtp_user).
+      MYSQL_USER: smtp_user
+      # MYSQL_PASSWORD: Senha do usuário (ex.: senha_complexa).
+      MYSQL_PASSWORD: 'xxxxxxxxxxxxxxxx'
     volumes:
-      - /srv/smtp-relay/db:/var/lib/mysql
+      - /srv/mysql:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-    depends_on:
-      smtp-relay:
-        condition: service_started
+    ports:
+      - 3306:3306
 
-  smtp-relay-frontend:
+  smtp-relay:
     image: clubenaval/relatorios-smtp:latest
     restart: always
-    container_name: smtp-relay-frontend
-    hostname: smtp-relay-frontend
+    container_name: app
+    hostname: app
     environment:
-      # DB_HOST: Hostname do servidor MySQL.
-      # Uso: Use o nome do serviço MySQL no Docker (ex.: 'banco'). Resolvido via rede interna.
+      # DB_HOST: Host do banco (ex.: smtp-relay-db, 192.168.1.100).
       - DB_HOST=smtp-relay-db
-      # DB_USER: Usuário para conexão ao MySQL.
-      # Uso: Use 'root' ou o usuário definido em MYSQL_USER (ex.: 'app_user'). Root é menos seguro.
-      - DB_USER=root
-      # DB_PASSWORD: Senha do usuário MySQL.
-      # Uso: Corresponde a MYSQL_ROOT_PASSWORD ou MYSQL_PASSWORD do serviço banco. Use .env.
-      - DB_PASSWORD=senha_forte_123
-      # DB_NAME: Nome do banco de dados a conectar.
-      # Uso: Deve corresponder ao MYSQL_DATABASE (ex.: smtp_cpd).
+      # DB_USER: Usuário MySQL (ex.: smtp_user, root).
+      - DB_USER=smtp_user
+      # DB_PASSWORD: Senha do usuário (ex.: senha_complexa).
+      - DB_PASSWORD='xxxxxxxxxxxxxxxx'
+      # DB_NAME: Nome do banco (ex.: smtp_cpd).
       - DB_NAME=smtp_cpd
-      # LOG_DIR: Diretório interno onde o mail.log é montado para leitura.
-      # Uso: Define onde o app espera encontrar o mail.log (ex.: /app/logs).
-      # O volume mapeia o mail.log do smtp-relay para este diretório.
+      # LOG_DIR: Diretório de logs (ex.: /app/logs).
       - LOG_DIR=/app/logs
-      # TZ: Fuso horário para timestamps na app e relatórios.
-      # Uso: Configure com um fuso válido (ex.: America/Sao_Paulo, UTC).
+      # TZ: Fuso horário (ex.: America/Sao_Paulo).
       - TZ=America/Sao_Paulo
-      # AUTH_MODE: Modo de autenticação da interface web.
-      # Uso: 'DB' para autenticação local (usuário/senha no MySQL); 'AD' para Active Directory/LDAP.
+      # AUTH_MODE: Modo de autenticação (AD, DB). Se DB, obrigatório configurar servidor SMTP para recuperação de senha.
       - AUTH_MODE=DB
-      # LDAP_HOST: Endereço do servidor LDAP/AD (usado se AUTH_MODE=AD).
-      # Uso: Especifique o IP ou hostname do servidor AD (ex.: 192.168.1.100). Comente se não usar AD.
+      # LDAP_HOST: Servidor LDAP (ex.: 192.168.1.100). Usado se AUTH_MODE=AD.
       # - LDAP_HOST=192.168.1.100
-      # LDAP_DOMAIN: Domínio para autenticação AD.
-      # Uso: Define o sufixo do usuário (ex.: @example.com). Comente se não usar AD.
+      # LDAP_DOMAIN: Domínio AD (ex.: @example.com). Usado se AUTH_MODE=AD.
       # - LDAP_DOMAIN=@example.com
-      # LDAP_BASE_DN: Base Distinguished Name para buscas LDAP.
-      # Uso: Especifique a base do diretório AD (ex.: DC=example,DC=com). Comente se não usar AD.
+      # LDAP_BASE_DN: Base DN (ex.: DC=example,DC=com). Usado se AUTH_MODE=AD.
       # - LDAP_BASE_DN=DC=example,DC=com
-      # LDAP_GROUP_DN: Grupo DN para autorização no AD.
-      # Uso: Define o grupo que concede acesso (ex.: CN=Users,DC=example,DC=com). Comente se não usar AD.
+      # LDAP_GROUP_DN: Grupo DN (ex.: CN=Users,DC=example,DC=com). Usado se AUTH_MODE=AD.
       # - LDAP_GROUP_DN=CN=Users,DC=example,DC=com
-      # SCHEDULE_TYPE: Tipo de agendamento para processar logs.
-      # Uso: 'minutes' para intervalos regulares; 'time' para horário fixo diário.
+      # SCHEDULE_TYPE: Agendamento (minutes, time).
       - SCHEDULE_TYPE=minutes
-      # SCHEDULE_INTERVAL_MINUTES: Intervalo em minutos para processamento de logs (se SCHEDULE_TYPE=minutes).
-      # Uso: Define a frequência (ex.: 2 para cada 2 minutos). Ajuste para balancear carga e atualidade.
+      # SCHEDULE_INTERVAL_MINUTES: Intervalo em minutos (ex.: 2). Usado se SCHEDULE_TYPE=minutes.
       - SCHEDULE_INTERVAL_MINUTES=2
-      # SCHEDULE_TIME: Horário fixo diário para processamento (se SCHEDULE_TYPE=time).
-      # Uso: Formato HH:MM (ex.: 16:40). Comente se usar SCHEDULE_TYPE=minutes.
+      # SCHEDULE_TIME: Horário fixo (ex.: 16:40). Usado se SCHEDULE_TYPE=time.
       # - SCHEDULE_TIME=16:40
-      # DB_PORT: Porta do servidor MySQL (opcional, padrão 3306).
-      # Uso: Descomente e altere apenas se o banco não estiver na porta padrão (ex.: 3307).
+      # DB_PORT: Porta MySQL (ex.: 3306, 3307). Padrão: 3306.
       # - DB_PORT=3306
+      # SMTP_SERVER: Servidor SMTP para recuperação de senha (ex.: smtp-relay, smtp-relay.gmail.com). Usado se AUTH_MODE=DB.
+      - SMTP_SERVER=smtp-relay
+      # SMTP_PORT: Porta SMTP (25 não seguro, 587 STARTTLS, 465 SSL). Usado se AUTH_MODE=DB.
+      - SMTP_PORT=25
+      # SMTP_USERNAME: Usuário SMTP (ex.: user@example.com). Usado se AUTH_MODE=DB e SMTP_AUTHENTICATED=True.
+      # - SMTP_USERNAME=user@example.com
+      # SMTP_PASSWORD: Senha SMTP (ex.: xxxxxxxxxxxxxxxx). Usado se AUTH_MODE=DB e SMTP_AUTHENTICATED=True.
+      # - SMTP_PASSWORD=xxxxxxxxxxxxxxxx
+      # SMTP_FROM: E-mail remetente (ex.: noreply@example.com). Usado se AUTH_MODE=DB.
+      - SMTP_FROM=noreply@example.com
+      # SMTP_FROM_NAME: Nome remetente (ex.: Sistema de Relatórios). Usado se AUTH_MODE=DB.
+      - SMTP_FROM_NAME='Sistema de Relatórios'
+      # SMTP_USE_TLS: Ativa TLS (True, False). Usado se AUTH_MODE=DB e SMTP_AUTHENTICATED=True.
+      # - SMTP_USE_TLS=True
+      # SMTP_USE_SSL: Ativa SSL (True, False). Usado se AUTH_MODE=DB e SMTP_AUTHENTICATED=True.
+      # - SMTP_USE_SSL=False
+      # SMTP_AUTHENTICATED: Requer autenticação SMTP (True, False). Usado se AUTH_MODE=DB.
+      - SMTP_AUTHENTICATED=False
     volumes:
-      # Mapeia apenas o arquivo mail.log do serviço smtp-gmail para leitura no diretório interno /app/logs.
-      # Uso: O arquivo /srv/smtp-gmail/logs/mail.log (no host) é montado como /app/logs/mail.log no contêiner.
-      # Importante: Apenas o arquivo específico mail.log é mapeado, não o diretório inteiro, para garantir
-      # que a aplicação leia exclusivamente o log ativo do Exim (decodificado com DECODE_SUBJECT=yes).
-      # O arquivo é montado em modo leitura, e a aplicação não realiza nenhuma modificação no arquivo original.
       - /srv/smtp-relay/logs:/app/logs
     ports:
       - "5000:5000"
