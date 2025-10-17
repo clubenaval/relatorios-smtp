@@ -380,10 +380,7 @@ def index():
             query += " WHERE " + " AND ".join(where)
 
         order_direction = "ASC" if sort_order == 'asc' else "DESC"
-        if sort_by == 'date':
-            query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
-        else:
-            query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
+        query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
 
         # Adiciona paginação
         items_per_page = 50
@@ -486,10 +483,7 @@ def print_report():
             query += " WHERE " + " AND ".join(where)
 
         order_direction = "ASC" if sort_order == 'asc' else "DESC"
-        if sort_by == 'date':
-            query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
-        else:
-            query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
+        query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
 
         # Não aplica LIMIT ou OFFSET para incluir todos os resultados
         cur.execute(query, params)
@@ -575,10 +569,7 @@ def export_csv():
             query += " WHERE " + " AND ".join(where)
 
         order_direction = "ASC" if sort_order == 'asc' else "DESC"
-        if sort_by == 'date':
-            query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
-        else:
-            query += f" ORDER BY log_time {order_direction}, log_date {order_direction}"
+        query += f" ORDER BY log_date {order_direction}, log_time {order_direction}"
 
         cur.execute(query, params)
         logs = cur.fetchall()
