@@ -235,7 +235,7 @@ def index():
         total = cur.fetchone()['total']
         total_pages = (total + per_page - 1) // per_page
 
-        query = "SELECT id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
+        query = "SELECT id, message_id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
         if where:
             query += " WHERE " + " AND ".join(where)
 
@@ -485,7 +485,7 @@ def print_report():
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
 
-        query = "SELECT id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
+        query = "SELECT id, message_id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
         params = []
         where = []
         if use_date_filter:
@@ -556,7 +556,7 @@ def export_csv():
         conn = get_conn(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
         cur = conn.cursor(dictionary=True)
 
-        query = "SELECT id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
+        query = "SELECT id, message_id, log_date, log_time, from_email, to_email, subject, status, origin_host, origin_ip FROM email_logs"
         params = []
         where = []
         if use_date_filter:
