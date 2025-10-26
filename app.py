@@ -626,6 +626,8 @@ def export_csv():
             pass
 
 if __name__ == '__main__':
+    from database import wait_for_db
+    wait_for_db(DB_HOST, DB_USER, DB_PASSWORD, DB_PORT)
     setup_database(AUTH_MODE, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
     # Execução inicial
     recs, pend, imp = parse_log(LOG_DIR, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)

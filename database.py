@@ -3,6 +3,22 @@ from mysql.connector import Error
 import logging
 from werkzeug.security import generate_password_hash
 
+def wait_for_db(host, user, password, port=3306, timeout=300, interval=5):
+    """Aguarda até que o servidor de banco de dados esteja disponível."""
+    import time
+    start_time = time.time()
+    while True:
+        try:
+            conn = mysql.connector.connect(host=host, user=user, password=password, port=port)
+            conn.close()
+            logging.info("Conexão com o banco de dados estabelecida com sucesso.")
+            return True
+        except Error as e:
+            logging.warning(f"Banco de dados não disponível: {e}. Tentando novamente em {interval} segundos...")
+            time.sleep(interval)
+        if time.time() - start_time > timeout:
+            raise TimeoutError("Tempo esgotado ao aguardar o banco de dados ficar disponível.")
+
 def get_conn(host, user, password, database, port=3306):
     return mysql.connector.connect(host=host, user=user, password=password, database=database, port=port)
 
