@@ -32,14 +32,9 @@ services:
     ports:
       - 25:25
       - 2525:25
-    healthcheck:
-      test: ["CMD-SHELL", "exim -bhc 127.0.0.1 -oX 25 <<< 'QUIT'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   smtp-relay-db:
-    image: mysql:5.7.44
+    image: mysql:latest
     restart: always
     container_name: smtp-relay-db
     hostname: smtp-relay-db
@@ -54,10 +49,6 @@ services:
       MYSQL_PASSWORD: 'xxxxxxxxxxxxxxxx'
     volumes:
       - /srv/mysql:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
     ports:
       - 3306:3306
 
@@ -120,8 +111,8 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      smtp-relay-db:
-        condition: service_healthy
+      - smtp-relay-db
+      - smtp-relay
 
 networks:
   default:
