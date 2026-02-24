@@ -160,7 +160,7 @@ def parse_log(log_dir, db_host, db_user, db_password, db_name, db_port=3306):
     # Consolidação por ID com critérios
     for msg_id, details in messages.items():
         if msg_id in existing_ids:
-            logging.info(f"ID {msg_id} já existe no DB; ignorando.")
+            logging.debug(f"ID {msg_id} já existe no DB; ignorando.")
             continue
         if msg_id not in groups or not groups[msg_id]['completed']:
             pending_ids.add(msg_id)
