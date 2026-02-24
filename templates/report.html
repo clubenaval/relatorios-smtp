@@ -2,360 +2,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de E-mails Enviados/Falhados - Clube Naval</title>
+    <title>Relatório de E-mails - Clube Naval</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-red: #C8102E; /* Vermelho principal do Clube Naval */
+            /* Identidade Visual */
+            --primary-red: #C8102E; 
             --secondary-red: #A50021;
-            --navy-blue: #1A3C5E; /* Azul naval escuro */
-            --dark-navy-blue: #0F2A45; /* Azul mais escuro para o modal */
-            --light-gray: #F5F5F5;
-            --medium-gray: #E0E0E0;
-            --dark-gray: #333333;
-            --white: #FFFFFF;
+            --navy-blue: #1A3C5E; 
+            
+            /* Paleta Light Clean */
+            --bg-body: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-main: #2C3E50;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --table-hover: #F8FAFC;
         }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: var(--light-gray);
-            color: var(--dark-gray);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
         }
+
         main {
-            max-width: 1200px;
+            flex: 1 0 auto;
+            max-width: 1400px;
+            width: 95%;
             margin: 30px auto;
-            padding: 0; /* Remove padding horizontal para bordas coladas */
-            background: var(--white);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Estilo Card Premium */
+        .card {
+            background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
             overflow: hidden;
         }
-        .filters {
-            background: var(--light-gray);
-            padding: 20px; /* Mantém padding no filtro */
-            border-bottom: 1px solid var(--medium-gray);
-            border-radius: 8px 8px 0 0;
-        }
-        .filters form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            margin: 0;
-        }
-        .filters label {
-            font-weight: 500;
-            color: var(--navy-blue);
-            min-width: 150px;
-        }
-        .filters input, .filters button {
-            padding: 10px 12px;
-            border: 1px solid var(--medium-gray);
-            border-radius: 6px;
+
+        .filters { padding: 25px; }
+        .filters label { font-weight: 500; color: var(--navy-blue); font-size: 14px; }
+
+        /* Inputs Modernos */
+        .filters input[type="text"],
+        .filters input[type="date"],
+        .filters input[type="time"] {
+            width: 100%;
+            background: #F8FAFC;
+            color: var(--text-main);
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        .filters input[type="checkbox"] {
-            width: auto;
-            padding: 0;
-            margin-right: 5px;
-        }
-        .filters .checkbox-label {
-            display: flex;
-            align-items: center;
-            min-width: auto;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }
         .filters input:focus {
             outline: none;
             border-color: var(--primary-red);
-        }
-        .filters input:disabled {
-            background-color: #F8F8F8;
-            color: #999;
-        }
-        .filters button {
-            background: var(--primary-red);
-            color: var(--white);
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-        .filters button:hover {
-            background: var(--secondary-red);
-        }
-        .export-btn {
-            background: var(--navy-blue);
-            color: var(--white);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-left: 10px;
-        }
-        .export-btn:hover {
-            background: var(--dark-navy-blue);
-        }
-        .results-info {
-            padding: 15px 20px;
             background: var(--white);
-            border-bottom: 1px solid var(--medium-gray);
+            box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+        }
+        .filters input:disabled { background-color: #E9ECEF; color: #999; cursor: not-allowed; }
+
+        /* Botões de Ação */
+        .btn-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+
+        button, .export-btn {
+            background: var(--primary-red);
+            color: #FFF;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
             font-size: 14px;
-            color: var(--navy-blue);
-        }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            table-layout: fixed; /* Colunas travadas, larguras proporcionais fixas */
-            margin: 0;
-            position: relative;
-        }
-        th, td {
-            padding: 12px 8px; /* Reduz padding horizontal para bordas mais coladas */
-            text-align: left;
-            vertical-align: top;
-            font-size: 15px; /* Fonte legível */
-            white-space: nowrap; /* Impede quebra de linhas na tabela */
-            overflow: hidden;
-            text-overflow: ellipsis; /* Trunca com ... se necessário, mas com larguras maiores para evitar */
-            border-right: 1px solid var(--medium-gray); /* Linhas verticais visíveis */
-            border-bottom: 1px solid var(--medium-gray); /* Linhas horizontais */
-            position: relative;
-        }
-        th:last-child, td:last-child {
-            border-right: none; /* Remove borda direita na última coluna */
-        }
-        th {
-            background: var(--navy-blue);
-            color: var(--white);
             font-weight: 500;
-            text-transform: uppercase;
-            font-size: 14px; /* Header legível */
-            letter-spacing: 0.5px;
-            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(200, 16, 46, 0.2);
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover, .export-btn:hover {
+            background: var(--secondary-red);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+        }
+        .export-btn { background: var(--navy-blue); box-shadow: 0 2px 8px rgba(26, 60, 94, 0.2); }
+        .export-btn:hover { background: #122B43; box-shadow: 0 4px 12px rgba(26, 60, 94, 0.3); }
+
+        /* Tabela Clean */
+        .results-info {
+            padding: 15px 25px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 14px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            border-bottom: 1px solid var(--border-color);
         }
-        /* Larguras proporcionais ajustadas para 7 colunas: ID (5%), Data (10%), Hora (10%), De (20%), Para (20%), Assunto (25%), Status (10%) */
-        th:nth-child(1), td:nth-child(1) { width: 5%; } /* ID */
-        th:nth-child(2), td:nth-child(2) { width: 10%; } /* Data */
-        th:nth-child(3), td:nth-child(3) { width: 10%; } /* Hora */
-        th:nth-child(4), td:nth-child(4) { width: 20%; } /* De */
-        th:nth-child(5), td:nth-child(5) { width: 20%; } /* Para */
-        th:nth-child(6), td:nth-child(6) { width: 25%; } /* Assunto */
-        th:nth-child(7), td:nth-child(7) { width: 10%; } /* Status */
-        tr:hover {
-            background: var(--light-gray);
+        th {
+            background: #F8FAFC;
+            color: var(--navy-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+            border-bottom: 2px solid var(--border-color);
         }
-        tr:nth-child(even) {
-            background: #FAFAFA;
-        }
+        tr { transition: background 0.2s ease; }
+        tr:hover { background: var(--table-hover); }
+
+        .status-sent { color: #10B981; font-weight: 600; }
+        .status-failed { color: #EF4444; font-weight: 600; }
+
         .sort-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 8px;
-            color: var(--white);
-            transition: color 0.3s;
-            padding: 0;
-            width: auto;
+            background: none; box-shadow: none; color: var(--text-muted);
+            padding: 0 5px; border: none; cursor: pointer;
         }
-        .sort-btn:hover {
-            color: #FFD700; /* Dourado para destaque */
+        .sort-btn:hover { color: var(--navy-blue); background: none; box-shadow: none; transform: none; }
+
+        /* =========================================
+           MELHORIAS NO MODAL E ITENS CLICÁVEIS
+           ========================================= */
+        
+        .clickable {
+            cursor: pointer; /* Transforma o mouse em mãozinha */
+            transition: color 0.2s ease;
         }
-        /* Estilo do modal */
+        .clickable:hover {
+            color: var(--primary-red); /* Indica visualmente o hover */
+        }
+
+        /* Animação suave para o modal */
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .modal {
             display: none;
-            position: absolute; /* Relativo ao documento; vamos compensar o scroll no JS */
-            background: rgba(15, 42, 69, 0.95); /* Azul naval mais escuro com leve transparência */
-            color: var(--white);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 20px 50px 20px 20px; /* Mais espaço na direita para o botão não encostar no texto */
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             z-index: 1000;
             font-size: 14px;
-            line-height: 1.8;
-            text-align: left;
-            width: auto; /* Tamanho ajustado ao conteúdo */
-            max-width: 400px; /* Limite máximo para evitar modais muito largos */
-            transition: opacity 0.3s ease; /* Transição suave para opacidade */
-            opacity: 1;
+            line-height: 1.6;
+            max-width: 450px;
+            word-wrap: break-word; /* Evita que textos longos quebrem o layout */
+            animation: fadeInSlide 0.2s ease-out forwards;
         }
-        .modal.hidden {
-            opacity: 0;
-            pointer-events: none; /* Evita interação durante o fade-out */
+        
+        .modal strong {
+            color: var(--navy-blue);
         }
-        .modal-content {
-            white-space: normal; /* Permite quebra de texto */
-            margin-bottom: 10px;
-            margin-right: 30px; /* Espaço para o ícone de copiar */
-        }
+
+        /* Melhoria no botão de copiar */
         .copy-icon {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
+            color: var(--text-muted);
+            background: #F8FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px;
+            box-shadow: none;
+            transition: all 0.2s ease;
             cursor: pointer;
-            color: var(--white);
-            font-size: 18px;
-            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .copy-icon:hover {
             color: var(--primary-red);
+            border-color: var(--primary-red);
+            background: #FFF;
+            box-shadow: 0 2px 8px rgba(200, 16, 46, 0.15);
+            transform: scale(1.05);
         }
-        .clickable {
-            cursor: pointer;
-        }
-        .no-results {
-            padding: 40px 20px;
-            text-align: center;
-            color: #666;
-            font-style: italic;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background: var(--light-gray);
-            gap: 10px;
-        }
+
+        /* Paginação */
+        .pagination { display: flex; justify-content: center; padding: 25px; gap: 10px; background: var(--card-bg); }
         .pagination a, .pagination span {
-            padding: 8px 12px;
-            text-decoration: none;
-            border: 1px solid var(--medium-gray);
-            border-radius: 6px;
-            background: var(--white);
-            color: var(--dark-gray);
-            transition: all 0.3s;
+            padding: 8px 16px; border-radius: 8px; background: var(--table-hover);
+            color: var(--text-main); text-decoration: none; border: 1px solid var(--border-color);
+            transition: all 0.3s; font-weight: 500;
         }
-        .pagination a:hover {
-            background: var(--primary-red);
-            color: var(--white);
-            border-color: var(--primary-red);
-        }
-        .pagination .current {
-            background: var(--primary-red);
-            color: var(--white);
-            border-color: var(--primary-red);
-            font-weight: 500;
-        }
+        .pagination a:hover { background: var(--primary-red); color: white; border-color: var(--primary-red); }
+        .pagination .current { background: var(--navy-blue); color: white; border-color: var(--navy-blue); }
+        .no-results { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 16px; }
+
         footer {
-            background: linear-gradient(135deg, var(--primary-red), var(--secondary-red));
-            color: var(--white);
-            text-align: center;
-            padding: 10px 0; /* Fininho */
-            font-size: 14px;
-            margin-top: 20px; /* Espaço após o main */
+            flex-shrink: 0; background: var(--card-bg); border-top: 1px solid var(--border-color);
+            color: var(--text-muted); text-align: center; padding: 20px 0; font-size: 14px; width: 100%;
         }
-        @media (max-width: 768px) {
-            .filters form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .filters label {
-                min-width: auto;
-            }
-            table {
-                font-size: 14px;
-            }
-            th, td {
-                padding: 8px 6px;
-                white-space: normal; /* Permite quebra em mobile */
-            }
-            .modal {
-                max-width: 80%;
-                padding: 10px;
-                font-size: 13px;
-            }
-        }
-
-        /* Estilo para impressão */
-        @media print {
-            body, html {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            main {
-                width: 210mm;
-                height: 297mm;
-                margin: 0 auto;
-                padding: 20mm;
-                background-color: white;
-                box-shadow: none;
-                border: none;
-            }
-
-            .filters, .pagination, .results-info {
-                display: none; /* Oculta filtros, paginação e informações de resultados */
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            th, td {
-                padding: 8px 10px;
-                border: 1px solid #ddd;
-                font-size: 12px;
-            }
-
-            th {
-                background-color: var(--navy-blue);
-                color: var(--white);
-            }
-
-            footer {
-                display: none; /* Esconde o rodapé durante a impressão */
-            }
-
-            .logo-header {
-                text-align: center;
-                margin-bottom: 20px;
-            }
-.filters {
-    display: block !important;
-    overflow: hidden !important;
-}
-.filters table {
-    table-layout: fixed !important;
-    width: 100% !important;
-    border-collapse: collapse !important;
-}
-.filters table td {
-    padding: 0px !important;
-    vertical-align: middle !important;
-}
-.filters table td:first-child {
-    width: 160px !important;
-}
-            .signature {
-                text-align: center;
-                margin-top: 20px;
-                font-size: 12px;
-            }
-        }
+        footer a { color: var(--navy-blue); text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        footer a:hover { color: var(--primary-red); }
     </style>
 </head>
 <body>
     {% include 'header.html' %}
 
-    <!-- Modal -->
     <div id="infoModal" class="modal">
         <div class="modal-content" id="modalContent"></div>
-        <button class="copy-icon" id="copyIcon" onclick="copyModalContent()" title="Copiar Informações">
+        <button class="copy-icon" id="copyIcon" onclick="copyModalContent()" title="Copiar Informações" style="position: absolute; top: 12px; right: 12px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -364,120 +238,107 @@
     </div>
 
     <main>
-        <div class="filters" style="display: block; overflow: hidden;">
-        <form action="/" method="GET">
-            <table style="border-collapse: collapse; width: 100%; table-layout: fixed;">
-            <tr>
-                <td style="width: 15%; padding: 4px 6px; text-align: right;">
-                <label for="start_date">Data Inicial:</label>
-                </td>
-                <td style="width: 20%; padding: 4px;">
-                <input type="date" id="start_date" name="start_date" 
-                    value="{{ start_date if start_date else '' }}"
-                    {% if search_email or search_subject %} disabled {% endif %}
-                    style="width: 100%; padding: 4px;">
-                </td>
-                <td style="width: 15%; padding: 4px 6px; text-align: right;">
-                <label for="end_date">Data Final:</label>
-                </td>
-                <td style="width: 20%; padding: 4px;">
-                <input type="date" id="end_date" name="end_date"
-                    value="{{ end_date if end_date else '' }}"
-                    {% if search_email or search_subject %} disabled {% endif %}
-                    style="width: 100%; padding: 4px;">
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 4px 6px; text-align: right;"><label for="start_time">Horário Inicial:</label></td>
-                <td style="padding: 4px;"><input type="time" id="start_time" name="start_time"
-                value="{{ start_time if start_time else '' }}" style="width: 100%; padding: 4px;"></td>
-                <td style="padding: 4px 6px; text-align: right;"><label for="end_time">Horário Final:</label></td>
-                <td style="padding: 4px;"><input type="time" id="end_time" name="end_time"
-                value="{{ end_time if end_time else '' }}" style="width: 100%; padding: 4px;"></td>
-            </tr>
-            <tr>
-                <td style="padding: 4px 6px; text-align: right;"><label for="search_email">Para (e-mail):</label></td>
-                <td style="padding: 4px;"><input type="text" id="search_email" name="search_email"
-                value="{{ search_email if search_email else '' }}" placeholder="Pesquisar por e-mail"
-                style="width: 100%; padding: 4px;"></td>
-                <td style="padding: 4px 6px; text-align: right;"><label for="search_subject">Assunto:</label></td>
-                <td style="padding: 4px;"><input type="text" id="search_subject" name="search_subject"
-                value="{{ search_subject if search_subject else '' }}" placeholder="Pesquisar por assunto"
-                style="width: 100%; padding: 4px;"></td>
-            </tr>
-            <tr>
-                <td style="padding: 4px 6px; text-align: right;"><label for="auto_refresh">Atualização Automática:</label></td>
-                <td style="padding: 4px;"><input type="checkbox" id="auto_refresh" name="auto_refresh" {% if auto_refresh %} checked {% endif %}></td>
-                <td style="padding: 4px 6px; text-align: right;"><label>Apenas falhados</label></td>
-                <td style="padding: 4px;"><input type="checkbox" name="status_filter" value="failed"
-                {% if status_filter == 'failed' %} checked {% endif %}></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td style="padding: 4px; text-align: right;">
-                <button type="submit" style="padding: 5px 10px;">Filtrar</button>
-                <button type="button" class="export-btn" onclick="preparePrint()" style="padding: 5px 10px;">Imprimir</button>
-                <button type="button" class="export-btn" onclick="exportCSV()" style="padding: 5px 10px;">Exportar CSV</button>
-                </td>
-            </tr>
+        <div class="card filters">
+            <form action="/" method="GET">
+                <table style="border-collapse: collapse; width: 100%; table-layout: fixed; border: none;">
+                <tr>
+                    <td style="width: 15%; padding: 8px; text-align: right; border: none;"><label for="start_date">Data Inicial:</label></td>
+                    <td style="width: 20%; padding: 8px; border: none;">
+                        <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else '' }}" {% if search_email or search_subject %} disabled {% endif %}>
+                    </td>
+                    <td style="width: 15%; padding: 8px; text-align: right; border: none;"><label for="end_date">Data Final:</label></td>
+                    <td style="width: 20%; padding: 8px; border: none;">
+                        <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else '' }}" {% if search_email or search_subject %} disabled {% endif %}>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: right; border: none;"><label for="start_time">Horário Inicial:</label></td>
+                    <td style="padding: 8px; border: none;"><input type="time" id="start_time" name="start_time" value="{{ start_time if start_time else '' }}"></td>
+                    <td style="padding: 8px; text-align: right; border: none;"><label for="end_time">Horário Final:</label></td>
+                    <td style="padding: 8px; border: none;"><input type="time" id="end_time" name="end_time" value="{{ end_time if end_time else '' }}"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: right; border: none;"><label for="search_email">Para (e-mail):</label></td>
+                    <td style="padding: 8px; border: none;"><input type="text" id="search_email" name="search_email" value="{{ search_email if search_email else '' }}" placeholder="Pesquisar por e-mail"></td>
+                    <td style="padding: 8px; text-align: right; border: none;"><label for="search_subject">Assunto:</label></td>
+                    <td style="padding: 8px; border: none;"><input type="text" id="search_subject" name="search_subject" value="{{ search_subject if search_subject else '' }}" placeholder="Pesquisar por assunto"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: right; border: none;"><label for="auto_refresh">Auto Refresh:</label></td>
+                    <td style="padding: 8px; border: none;"><input type="checkbox" id="auto_refresh" name="auto_refresh" style="width: auto;" {% if auto_refresh %} checked {% endif %}></td>
+                    <td style="padding: 8px; text-align: right; border: none;"><label>Apenas falhados:</label></td>
+                    <td style="padding: 8px; border: none;"><input type="checkbox" name="status_filter" value="failed" style="width: auto;" {% if status_filter == 'failed' %} checked {% endif %}></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="padding: 15px 8px 0; border: none;">
+                        <div class="btn-group">
+                            <button type="submit">Filtrar Relatório</button>
+                            <button type="button" class="export-btn" onclick="preparePrint()">Imprimir</button>
+                            <button type="button" class="export-btn" onclick="exportCSV()">Exportar CSV</button>
+                        </div>
+                    </td>
+                </tr>
+                </table>
+            </form>
+        </div>
+
+        <div class="card">
+            {% if logs %}
+            <div class="results-info">
+                Exibindo {{ (page-1)*50 + 1 }} a {{ (page-1)*50 + logs|length }} de {{ total_records if total_records is defined else logs|length }} resultados encontrados
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">ID</th>
+                        <th style="width: 10%;">Data<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}{% if auto_refresh %}auto_refresh=true&{% endif %}sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'date' and sort_order == 'asc' else '↓' if sort_by == 'date' else '↕' }}</button></th>
+                        <th style="width: 10%;">Hora<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}{% if auto_refresh %}auto_refresh=true&{% endif %}sort_by=time&sort_order={% if sort_by == 'time' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'time' and sort_order == 'asc' else '↓' if sort_by == 'time' else '↕' }}</button></th>
+                        <th style="width: 20%;">De</th>
+                        <th style="width: 20%;">Para</th>
+                        <th style="width: 22%;">Assunto</th>
+                        <th style="width: 10%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="id-col clickable" data-message-id="{{ log.message_id }}">{{ log.id }}</td>
+                        <td>{{ log.log_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ log.log_time }}</td>
+                        <td class="from-col clickable" data-ip="{{ log.origin_ip }}" data-host="{{ log.origin_host }}" data-from="{{ log.from_email }}">{{ log.from_email }}</td>
+                        <td class="to-col clickable">{{ log.to_email }}</td>
+                        <td class="subject-col clickable">{{ log.subject }}</td>
+                        <td class="{% if log.status == 'sent' %}status-sent{% else %}status-failed{% endif %}">
+                            {{ 'Enviado' if log.status == 'sent' else log.status }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
-        </form>
-        </div>
-        {% if logs %}
-        <div class="results-info">
-            Mostrando {{ (page-1)*50 + 1 }} a {{ (page-1)*50 + logs|length }} de {{ total_records if total_records is defined else logs|length }} resultados.
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Data<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}{% if auto_refresh %}auto_refresh=true&{% endif %}sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'date' and sort_order == 'asc' else '↓' if sort_by == 'date' else '↕' }}</button></th>
-                    <th>Hora<button class="sort-btn" onclick="window.location.href='?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}{% if auto_refresh %}auto_refresh=true&{% endif %}sort_by=time&sort_order={% if sort_by == 'time' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if page > 1 %}&page={{ page }}{% endif %}'">{{ '↑' if sort_by == 'time' and sort_order == 'asc' else '↓' if sort_by == 'time' else '↕' }}</button></th>
-                    <th>De</th>
-                    <th>Para</th>
-                    <th>Assunto</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                <tr>
-                    <td class="id-col clickable" data-message-id="{{ log.message_id }}">{{ log.id }}</td>
-                    <td>{{ log.log_date.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ log.log_time }}</td>
-                    <td class="from-col clickable" data-ip="{{ log.origin_ip }}" data-host="{{ log.origin_host }}" data-from="{{ log.from_email }}">{{ log.from_email }}</td>
-                    <td class="to-col clickable">{{ log.to_email }}</td>
-                    <td class="subject-col clickable">{{ log.subject }}</td>
-                    <td {% if log.status == 'sent' %}style="color: #28A745;"{% endif %}>{{ 'Enviado' if log.status == 'sent' else log.status }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        {% if total_pages > 1 %}
-        <div class="pagination">
-            {% if page > 1 %}
-            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page-1 }}">← Anterior</a>
+            
+            {% if total_pages > 1 %}
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page-1 }}">← Anterior</a>
+                {% endif %}
+                
+                <span class="current">Página {{ page }} de {{ total_pages }}</span>
+                
+                {% if page < total_pages %}
+                <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page+1 }}">Próxima →</a>
+                {% endif %}
+            </div>
             {% endif %}
-            
-            <span class="current">Página {{ page }} de {{ total_pages }}</span>
-            
-            {% if page < total_pages %}
-            <a href="?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if start_time %}start_time={{ start_time }}&{% endif %}{% if end_time %}end_time={{ end_time }}&{% endif %}{% if search_email %}search_email={{ search_email }}&{% endif %}{% if search_subject %}search_subject={{ search_subject }}&{% endif %}{% if status_filter %}status_filter={{ status_filter }}&{% endif %}sort_by={{ sort_by|default('date') }}&sort_order={{ sort_order|default('desc') }}&page={{ page+1 }}">Próxima →</a>
+            {% else %}
+            <div class="no-results">
+                <p>Nenhum log encontrado para os filtros selecionados.</p>
+            </div>
             {% endif %}
         </div>
-        {% endif %}
-        {% else %}
-        <div class="no-results">
-            <p>Nenhum log encontrado{% if start_date and end_date and start_date != end_date %} entre {{ start_date }} e {{ end_date }}{% elif start_date %} em {{ start_date }}{% endif %}{% if search_email %} com filtro de e-mail '{{ search_email }}'{% endif %}{% if search_subject %} com filtro de assunto '{{ search_subject }}'{% endif %}{% if status_filter == 'failed' %} (apenas falhados){% endif %}.</p>
-        </div>
-        {% endif %}
     </main>
 
     <footer>
-        <a href="https://www.henrique.tec.br" target="_blank" style="color: inherit; text-decoration: none;">
+        <a href="https://www.henrique.tec.br" target="_blank">
             Desenvolvido por Henrique Fagundes - Todos os direitos reservados
         </a>
     </footer>
@@ -498,7 +359,7 @@
         modal.classList.remove('hidden');
         modal.style.visibility = 'hidden';
 
-        const modalWidth = Math.min(400, modal.offsetWidth || 400);
+        const modalWidth = Math.min(450, modal.offsetWidth || 450);
         const modalHeight = modal.offsetHeight || 0;
 
         const maxX = window.scrollX + window.innerWidth;
@@ -518,18 +379,19 @@
         modal.style.visibility = 'visible';
     }
 
+    // Formatação elegante do texto injetado no Modal
     document.querySelectorAll('.id-col, .from-col, .to-col, .subject-col').forEach(cell => {
         cell.addEventListener('click', function(event) {
             event.stopPropagation();
 
             if (this.classList.contains('id-col')) {
-                modalContent.innerHTML = `ID da Mensagem: ${this.dataset.messageId}`;
+                modalContent.innerHTML = `<strong>ID da Mensagem:</strong><br>${this.dataset.messageId}`;
             } else if (this.classList.contains('from-col')) {
-                modalContent.innerHTML = `IP Origem: ${this.dataset.ip}<br>Host Origem: ${this.dataset.host}<br>E-mail De: ${this.dataset.from}`;
+                modalContent.innerHTML = `<strong>IP Origem:</strong> ${this.dataset.ip}<br><strong>Host Origem:</strong> ${this.dataset.host}<br><strong>E-mail De:</strong> ${this.dataset.from}`;
             } else if (this.classList.contains('to-col')) {
-                modalContent.innerHTML = this.innerText;
+                modalContent.innerHTML = `<strong>Enviado Para:</strong><br>${this.innerText}`;
             } else if (this.classList.contains('subject-col')) {
-                modalContent.innerHTML = this.innerText;
+                modalContent.innerHTML = `<strong>Assunto:</strong><br>${this.innerText}`;
             }
 
             showModalAtEventPosition(event);
@@ -544,70 +406,66 @@
                 modal.style.display = 'none';
                 modalContent.innerHTML = '';
                 copyIcon.style.display = 'none';
-            }, 300);
+            }, 200);
         }
     });
 
     copyIcon.addEventListener('click', function() {
-        const text = modalContent.innerText;
+        // Remove as tags HTML (strong, br) para não copiar sujo pro clipboard
+        let textToCopy = modalContent.innerHTML.replace(/<br>/g, '\n').replace(/<strong>/g, '').replace(/<\/strong>/g, '');
+        
         const tempInput = document.createElement('textarea');
-        tempInput.value = text;
+        tempInput.value = textToCopy;
         tempInput.style.position = 'fixed';
         tempInput.style.opacity = '0';
         document.body.appendChild(tempInput);
         tempInput.select();
         try {
             document.execCommand('copy');
-            modal.classList.add('hidden');
+            
+            // Feedback visual rápido no botão de copiar
+            const originalColor = copyIcon.style.color;
+            copyIcon.style.color = '#10B981'; // Fica verde
+            copyIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            
             setTimeout(() => {
-                modal.style.display = 'none';
-                modalContent.innerHTML = '';
-                copyIcon.style.display = 'none';
-            }, 300);
+                modal.classList.add('hidden');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    modalContent.innerHTML = '';
+                    copyIcon.style.display = 'none';
+                    // Reseta o ícone para o original
+                    copyIcon.style.color = originalColor;
+                    copyIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+                }, 200);
+            }, 800); // Aguarda 800ms para o usuário ver o check verde
+            
         } catch (err) {
             console.error('Erro ao copiar: ', err);
             alert('Falha ao copiar o conteúdo. Por favor, copie manualmente.');
-            modal.classList.add('hidden');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                modalContent.innerHTML = '';
-                copyIcon.style.display = 'none';
-            }, 300);
         } finally {
             document.body.removeChild(tempInput);
         }
     });
 
-    // Função para preparar a impressão com os parâmetros atuais
     function preparePrint() {
-        // Obtém os parâmetros atuais da URL
         const urlParams = new URLSearchParams(window.location.search);
         let printUrl = '/print-report';
-
-        // Adiciona os parâmetros à URL de impressão
         if (urlParams.toString()) {
             printUrl += '?' + urlParams.toString();
         }
-
-        // Abre a nova janela com os parâmetros
         window.open(printUrl, '_blank');
     }
 
     function exportCSV() {
-        // Obtém os parâmetros atuais da URL
         const urlParams = new URLSearchParams(window.location.search);
         let exportUrl = '/export-csv';
-
-        // Adiciona os parâmetros à URL de exportação
         if (urlParams.toString()) {
             exportUrl += '?' + urlParams.toString();
         }
-
-        // Abre a URL para download
         window.location.href = exportUrl;
     }
 
-    // Função para atualização automática
     const autoRefreshCheckbox = document.getElementById('auto_refresh');
     let refreshInterval = null;
 
@@ -617,24 +475,20 @@
             urlParams.set('auto_refresh', 'true');
             refreshInterval = setInterval(() => {
                 window.location.href = '?' + urlParams.toString();
-            }, 60000); // 1 minuto em milissegundos
+            }, 60000); 
         } else {
             urlParams.delete('auto_refresh');
             if (refreshInterval) {
                 clearInterval(refreshInterval);
                 refreshInterval = null;
             }
-            // Atualiza a URL sem recarregar para remover o parâmetro auto_refresh
             window.history.replaceState(null, '', '?' + urlParams.toString());
         }
     }
 
-    // Inicializa a atualização automática se a checkbox estiver marcada
     if (autoRefreshCheckbox.checked) {
         toggleAutoRefresh();
     }
-
-    // Adiciona o evento de mudança na checkbox
     autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
 </script>
 </body>
